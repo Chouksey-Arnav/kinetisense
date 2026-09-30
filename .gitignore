@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+node_modules/
+.env
+.env.*
+# raw sensor recordings and anything with a person's name or video
+data/raw/
+data/video/
+data/synthetic/
