@@ -35,14 +35,22 @@ Status of every claim in the original (AI-generated) project plan. Update as ite
 
 Allowed once supported: "measures forearm angular velocity", "differs from modeled metrics such as Motus elbow torque". Not allowed: "measures pitch speed" without radar validation, "prevents injury", "beats Motus".
 
+## Answered (2026-09-30)
+
+- Co-builder: Vatsalya Vishnoi, family friend of about 7 years.
+- Parts ordered 2026-09-30, nothing shipped yet. Soldering supplies not confirmed in the order.
+- Demo phone: iPhone 17. Safari has no Web Bluetooth, so Wi-Fi transport. Set the hotspot to "Maximize Compatibility" (2.4 GHz) for the Pico 2 W.
+- Radar: student will ask his cricket team for a bowling speed gun. Need to confirm the type (Doppler) and its minimum speed reading.
+- eCYBERMISSION advisor: possibly the student's dad. Check official rules on who qualifies as Team Advisor.
+- Student does not know JavaScript (said "Java"). Knows Python. Web stack must be simple and learnable.
+
 ## Open questions
 
-- Friend: identity, district, grade, registered on team, role.
+- Vatsalya: district, grade, registered on CAC team, and which parts he builds.
 - Volunteer pitcher: who, age, parent or coach sign-off, available dates.
 - Which SHIM shipped, and parts arrival date.
-- Demo phone (iPhone or Android).
-- Radar gun source. eCYBERMISSION adult advisor.
-- Does the student know JavaScript? Decides the web stack.
+- Does Vatsalya know JavaScript? Decides who owns the web app.
+- Cricket radar gun: model, type, minimum reading.
 
 ## Decisions
 
