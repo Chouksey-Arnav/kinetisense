@@ -16,6 +16,7 @@ Required for the Congressional App Challenge. Every AI contribution is listed he
 | Docs | `docs/verification_log.md` | Claude recorded the student's answers (co-builder, phone, radar, advisor, JavaScript experience) in the log. | Claude (documentation only) |
 | Boilerplate | `ml/tools/make_synthetic_session.py` | Claude wrote a synthetic IMU data generator for practice. Fake data, never used for evaluation. | Claude (boilerplate only) |
 | Docs | `README.md` | Claude wrote the root README with links to existing files. | Claude (documentation only) |
+| Docs | `docs/data_plan.md`, `README.md` | Claude wrote the data plan (how real training data is recorded, labeled, split, and used honestly) and added its link to the README. | Claude (documentation only) |
 | ML core | none yet | No ML code written by Claude. The student writes the first data loading and plotting analysis. | Student |
 
 ## Template for future sessions

@@ -12,6 +12,7 @@ Early stage (2026-09-30). Parts are ordered and have not arrived. No real sensor
 
 | What | Link |
 |---|---|
+| How training data is made, labeled and used honestly | [docs/data_plan.md](docs/data_plan.md) |
 | Verified facts, corrections, open questions | [docs/verification_log.md](docs/verification_log.md) |
 | Every AI contribution, by session | [AI_USAGE.md](AI_USAGE.md) |
 | Working rules for the AI coach | [CLAUDE.md](CLAUDE.md) |
