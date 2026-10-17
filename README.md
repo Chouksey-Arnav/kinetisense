@@ -26,7 +26,13 @@ Early stage (2026-09-30). Parts are ordered and have not arrived. No real sensor
 
 ## Notebooks
 
-None yet. The first one is the student-written analysis that loads and plots IMU data. It will be linked here once it exists.
+All notebooks use synthetic practice data only. Nothing in them is a result.
+
+| Notebook | What it does |
+|---|---|
+| [ml/notebooks/01_load_and_plot.ipynb](ml/notebooks/01_load_and_plot.ipynb) | Load a session, compute gyro magnitude, plot it |
+| [ml/notebooks/02_find_throws.ipynb](ml/notebooks/02_find_throws.ipynb) | 1 second windows, threshold detector, tp/fp/fn/tn (draft) |
+| [ml/exercises/03_honest_threshold.md](ml/exercises/03_honest_threshold.md) | Next exercise: test on unseen sessions, fix the window boundary bug |
 
 ## Rules this project follows
 
