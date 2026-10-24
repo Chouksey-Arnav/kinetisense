@@ -10,6 +10,10 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+Run it from inside `web/`, or the theme in `web/.streamlit/config.toml` won't load and the app falls back to default fonts and colors.
+
+To open it on a phone, put the phone on the same Wi-Fi as the computer and open the "Network URL" that Streamlit prints.
+
 ## Data
 
 `sample_data/demo_throws.csv` and `sample_data/demo_samples.csv` are synthetic stand-in data made by `tools/make_demo_data.py`. They are not a real recording. The app shows a DEMO DATA banner while `DATA_IS_SYNTHETIC = True` in `app.py`.
