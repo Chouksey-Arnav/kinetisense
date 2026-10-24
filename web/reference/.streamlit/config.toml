@@ -1,0 +1,20 @@
+# KinetiSense design tokens. Streamlit reads this file when you run from this folder.
+# Written by Claude as a reference. See AI_USAGE.md.
+
+[theme]
+base = "dark"
+primaryColor = "#8fa8ff"              # accent: links, focus rings, selected nav, single chart line
+backgroundColor = "#05070b"           # page
+secondaryBackgroundColor = "#0d1118"  # inputs, sidebar, code
+textColor = "#e6e8ee"                 # primary text
+borderColor = "#1c2230"               # every hairline border
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap"
+headingFontWeights = [600, 600, 600]
+headingFontSizes = ["2.5rem", "1.375rem", "1.125rem"]
+metricValueFontSize = "2rem"
+baseRadius = "14px"
+chartCategoricalColors = ["#3987e5", "#d95926", "#199e70"]
+
+[client]
+toolbarMode = "viewer"                # hides the Deploy button
