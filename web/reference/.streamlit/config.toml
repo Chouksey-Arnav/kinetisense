@@ -1,23 +1,25 @@
-[theme]
-base = "dark"
-primaryColor = "#9dbcff"              # light blue accent (raisedhand). Selected tabs, focus rings, chart line
-backgroundColor = "#05070d"           # page background, almost black with a little navy
-secondaryBackgroundColor = "#0e1322"  # dropdowns and inputs
-textColor = "#eceef4"                 # main text
-borderColor = "#1d2335"               # every thin border
-linkColor = "#9dbcff"
+# The whole look of the app lives here. app.py only adds a few things a config file can't do.
+# Streamlit only finds this file if you run the app from inside web/.
 
-# Three fonts, all free from Google Fonts:
-#   Inter for normal text, Source Serif 4 for headings (with italics), Geist Mono for small labels
+[theme]
+base = "light"
+primaryColor = "#3d5bd9"              # blue, a darker version of raisedhand's so it's readable on cream
+backgroundColor = "#fbfbed"           # cream page, from heylemon
+secondaryBackgroundColor = "#f1f0e2"  # inputs and dropdowns
+textColor = "#1a1a17"                 # almost black ink, from heylemon
+borderColor = "#e6e4d3"
+linkColor = "#3d5bd9"
+
+# one font for everything. Headings are just bolder, not a different font
 font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-headingFont = "Source Serif 4:https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400..600;1,8..60,400..600&display=swap"
-codeFont = "Geist Mono:https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500&display=swap"
-headingFontWeights = [500, 500, 500, 500, 500, 500]
-headingFontSizes = ["3rem", "2rem", "1.25rem"]
+headingFontWeights = [600, 600, 600, 600, 600, 600]
+headingFontSizes = ["1.75rem", "1.2rem", "1.05rem"]
 
 baseRadius = "14px"
-buttonRadius = "999px"                
-chartCategoricalColors = ["#3987e5", "#d95926", "#199e70"]  # passed a colorblind check, so Compare stops at 3
+buttonRadius = "14px"
+# blue, green, purple. Passed a colorblind check on white, so Compare stops at 3.
+# Orange is saved for the sensor limit so it never means two things.
+chartCategoricalColors = ["#3d5bd9", "#1d8a5e", "#a34fbf"]
 
 [client]
-toolbarMode = "viewer"                
+toolbarMode = "minimal"
