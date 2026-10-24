@@ -3,28 +3,35 @@
 #   streamlit run app.py
 # (You have to be inside web/ or the theme in web/.streamlit/config.toml won't load.)
 
+import base64
 from pathlib import Path
 
 import altair as alt
 import pandas as pd
 import streamlit as st
 
+import ai_coach
+
 # ---------------------------------------------------------------
 # Settings. Change things here, not deep in the code.
 # ---------------------------------------------------------------
 DATA_DIR = Path(__file__).resolve().parent / "sample_data"
+ASSETS = Path(__file__).resolve().parent / "assets"  # logo.svg (the wordmark) and mark.svg (the Q, for the browser tab)
 DATA_IS_SYNTHETIC = True  # only flip to False when the CSVs are REAL recordings
 SENSOR_LIMIT = 4000       # most the sensor can read in one direction (°/s). From the datasheet, not tested yet
 WINDOW_MS = 200           # how far before and after the peak we show on the throw chart
 MAX_COMPARE = 3           # our chart colors only pass the colorblind check for 3 lines
 BLUE, ORANGE, FAINT = "#3d5bd9", "#c8601a", "#b9b7a8"  # orange only ever means "sensor limit"
-TABS = ["Throws", "One throw", "Compare", "About"]
+AVATARS = {"user": ":material/person:", "assistant": ":material/auto_awesome:"}  # keeps orange out of the chat
+TABS = ["Throws", "One throw", "Compare", "Ask AI", "About"]
+SUGGESTIONS = ["Explain this session in plain words", "Which throws hit the sensor limit, and what does that mean?",
+               "How different were my fastest and slowest throws?", "What can't this data tell me?"]
 
 # The columns each CSV has to have, or the app stops with a clear message
 NEEDED = {"demo_throws.csv": {"throw_id", "peak_time_s", "peak_dps", "clipped"},
           "demo_samples.csv": {"throw_id", "time_s", "gx", "gy", "gz", "gyro_mag"}}
 
-st.set_page_config(page_title="KinetiSense", page_icon="⚾", layout="centered")
+st.set_page_config(page_title="Kinetiq", page_icon=str(ASSETS / "mark.svg"), layout="centered")
 
 # ---------------------------------------------------------------
 # Styles. Colors and the font are in config.toml. This is only what a
@@ -36,7 +43,8 @@ st.html("""<style>
 header[data-testid="stHeader"] { display: none; }
 [data-testid="stMainBlockContainer"] { padding: 1.25rem 1rem 6rem; }
 
-.top { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 17px; }
+.top { display: flex; justify-content: space-between; align-items: center; }
+.top img { height: 20px; display: block; }
 .pill { font-size: 12px; font-weight: 500; color: #8a4410; background: #fbe6d4; border-radius: 999px; padding: 3px 10px; }
 
 [class*="st-key-row"] button { min-height: 52px; }
@@ -46,6 +54,9 @@ header[data-testid="stHeader"] { display: none; }
 @media (max-width: 640px) {
   .st-key-tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 100; padding: 10px 12px 14px;
                  background: #fbfbedf2; backdrop-filter: blur(12px); border-top: 1px solid #e6e4d3; }
+  /* five tabs have to fit in one row on a 375px wide phone */
+  .st-key-tabs button { padding: 0 4px; min-width: 0; }
+  .st-key-tabs button p { font-size: 13px; white-space: nowrap; }
 }
 </style>""")
 
@@ -137,6 +148,13 @@ def line_chart(df, series, limit=False):
     st.altair_chart(alt.layer(*layers).properties(height=280), width="stretch")
 
 
+def ask_about(question, screen):
+    """Runs when you tap an "Ask AI" button on another page. Jumps to Ask AI and sends the question."""
+    st.session_state.tab = "Ask AI"
+    st.session_state.pending = question
+    st.session_state.screen = screen
+
+
 def open_throw(throw_id):
     """Runs when you tap a throw in the list. Jumps to the One throw tab with that throw picked."""
     st.session_state.tab = "One throw"
@@ -211,6 +229,10 @@ def one_page(throws):
                     "If a line touches it, that direction maxed out.\n"
                     "- Hover or tap anywhere on the chart to see the exact numbers.")
 
+    st.button("Ask AI about this throw", icon=":material/auto_awesome:", on_click=ask_about,
+              args=(f"Explain throw {tid} to me. How does it compare to the rest of the session?",
+                    f"One throw page, looking at throw {tid}, {view} view"))
+
 
 # ---------------------------------------------------------------
 # Compare: throws on top of each other, lined up at their fastest moment
@@ -237,6 +259,87 @@ def compare_page(throws):
         "Rank": picked["rank"].map(ordinal),
         "Hit the limit": picked.clipped.map({True: "Yes", False: "No"}),
     }), hide_index=True)
+
+    names = ", ".join(ids)
+    st.button("Ask AI to compare these", icon=":material/auto_awesome:", on_click=ask_about,
+              args=(f"Compare throws {names}. What's different about them?", f"Compare page, looking at throws {names}"))
+
+
+# ---------------------------------------------------------------
+# Ask AI: questions about this session, answered by a model on Groq. All the
+# rules and safety checks are in ai_coach.py. This part is only the chat screen.
+# ---------------------------------------------------------------
+@st.cache_resource
+def groq_client(key):
+    """One connection to Groq, reused by every visitor."""
+    import groq
+    return groq.Groq(api_key=key, timeout=20, max_retries=1)
+
+
+@st.cache_resource
+def app_limiter():
+    """One question counter for the whole app (cache_resource means everyone shares it)."""
+    return ai_coach.RateLimiter(ai_coach.GLOBAL_LIMIT_PER_HOUR)
+
+
+def send(text):
+    """Runs when you tap a suggested question."""
+    st.session_state.pending = text
+    st.session_state.screen = "Ask AI page, whole session"
+
+
+def answer(question, throws, samples, key):
+    """Check the question, ask Groq, and save both to the chat. Problems show as a warning instead."""
+    q, problem = ai_coach.check_question(question, st.session_state.setdefault("ai_limits", {}))
+    if problem is None and not app_limiter().allow():
+        problem = "The AI has answered a lot of questions this hour. Try again later."
+    if problem:
+        st.warning(problem)
+        return
+
+    chat = st.session_state.chat
+    with st.chat_message("user", avatar=AVATARS["user"]):
+        st.markdown(q)
+    with st.chat_message("assistant", avatar=AVATARS["assistant"]):
+        with st.spinner("Looking at your throws..."):
+            context = ai_coach.build_context(throws, samples, SENSOR_LIMIT, DATA_IS_SYNTHETIC,
+                                             st.session_state.get("screen", "Ask AI page, whole session"))
+            reply, error = ai_coach.ask(groq_client(key), ai_coach.get_model(st.secrets), q, chat, context, SENSOR_LIMIT)
+        if error:
+            st.error(error)
+            return
+        st.markdown(reply)
+    chat += [{"role": "user", "content": q}, {"role": "assistant", "content": reply}]
+    st.session_state.screen = "Ask AI page, whole session"  # follow-ups are about the whole chat again
+
+
+def ask_page(throws):
+    st.title("Ask AI", anchor=False)
+    st.caption("Ask about the throws in this session. The AI only sees the numbers in this app, and it can be wrong, "
+               "so check anything important against the charts.")
+    key = ai_coach.get_api_key(st.secrets)
+    if not key:
+        st.info("The AI is turned off because there's no Groq API key on this computer. "
+                "web/README.md says how to add one. Everything else in the app works without it.")
+        return
+
+    chat = st.session_state.setdefault("chat", [])
+    for m in chat:
+        with st.chat_message(m["role"], avatar=AVATARS[m["role"]]):
+            st.markdown(m["content"])
+
+    question = st.session_state.get("ask_box") or st.session_state.pop("pending", None)
+    if question:
+        answer(question, throws, load_data()[1], key)
+
+    if not st.session_state.chat:
+        with st.container(horizontal=True):
+            for s in SUGGESTIONS:
+                st.button(s, on_click=send, args=(s,), icon=":material/auto_awesome:")
+    with st.container():  # inside a container the box sits here, not pinned over the phone tab bar
+        st.chat_input("Ask about your throws", key="ask_box", max_chars=ai_coach.MAX_QUESTION_CHARS)
+    if st.session_state.chat:
+        st.button("Clear chat", on_click=lambda: st.session_state.chat.clear(), type="tertiary")
 
 
 # ---------------------------------------------------------------
@@ -270,6 +373,9 @@ It doesn't measure pitch speed, ball spin, injury risk or arm health. It only me
 Arnav Chouksey and Vatsalya Vishnoi, for the Congressional App Challenge.
 
 We used Claude, an AI, to write the code and design of this app. Every time we used AI on this project is written down in AI_USAGE.md in our code.
+
+### The Ask AI tab
+Ask AI sends this session's numbers and your question to a language model (gpt-oss-120b by OpenAI, run by Groq). It gets numbers only, no names or video. It is told not to guess pitch speed, give medical advice or grade your throws, and it can still make mistakes, so the charts are the real answer. The logo was first sketched with Google Gemini's image generator, then Claude redrew it as a sharp vector file.
 """)
 
 
@@ -278,10 +384,12 @@ We used Claude, an AI, to write the code and design of this app. Every time we u
 # ---------------------------------------------------------------
 throws, _ = load_data()
 demo = '<span class="pill">Demo data</span>' if DATA_IS_SYNTHETIC else ""
-st.html(f'<div class="top">KinetiSense {demo}</div>')
+logo = base64.b64encode((ASSETS / "logo.svg").read_bytes()).decode()  # inlined so it works with no network
+st.html(f'<div class="top"><img src="data:image/svg+xml;base64,{logo}" alt="Kinetiq"> {demo}</div>')
 
 st.session_state.setdefault("tab", TABS[0])
 with st.container(key="tabs"):
     tab = st.segmented_control("Page", TABS, key="tab", required=True, label_visibility="collapsed", width="stretch")
 
-{"Throws": throws_page, "One throw": one_page, "Compare": compare_page, "About": about_page}[tab](throws)
+{"Throws": throws_page, "One throw": one_page, "Compare": compare_page, "Ask AI": ask_page,
+ "About": about_page}[tab](throws)
