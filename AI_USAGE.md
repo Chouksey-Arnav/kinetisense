@@ -40,6 +40,15 @@ Required for the Congressional App Challenge. Every AI contribution is listed he
 | Reference code | `web/reference/app.py`, `web/reference/.streamlit/config.toml` | At the student's request, Claude wrote a complete reference version of the web viewer that shows the design system working (theme config, keyed cards, one entrance animation, Altair charts with hover, honest labels). It is a separate example to read, not the submission app. If any of it is copied into `web/app.py`, that must be logged here as Claude written code. | Claude (reference only) |
 | Docs | `docs/design_system.md` and a shared Claude Docs copy | Claude wrote the design spec (fonts, colors, spacing, motion, file structure, Streamlit pitfalls, honest wording) for the student to send to the co-builder. Chart colors were checked with a colorblind palette validator. | Claude (documentation only) |
 
+## Session 4 (2026-10-24)
+
+| Area | File(s) | Kind of help | Who wrote the code |
+|---|---|---|---|
+| UI rewrite | `web/app.py` | At the student's request, Claude rewrote the whole web app so it looks and works like a phone app: one font, one color theme, a tab bar that sits at the bottom on a phone, a tappable throw list, two big numbers per page, and chart readouts that work when you tap. Claude also rewrote all the on-screen text in plain words. The data loading and checking code (`load_data`, `throw_window`) is kept from the earlier version with small changes. Tested in a browser at iPhone and computer sizes and with Streamlit's test runner (every tab, every throw, both chart views, three broken-file cases). | Claude (whole file) |
+| Theme | `web/.streamlit/config.toml` | Claude wrote the theme file. It was missing from `web/`, which is why the app showed mixed fonts and colors. | Claude |
+| Research | none | Claude rendered heylemon.ai and raisedhand.ai in a browser and read their real colors and fonts, then ran the chart colors through a colorblind palette validator. | n/a |
+| Docs | `docs/design_system.md` | Claude rewrote the design spec to match the new app. | Claude (documentation only) |
+
 ## Template for future sessions
 
 | Area | File(s) | Kind of help | Who wrote the code |
