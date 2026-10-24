@@ -1,108 +1,81 @@
 # KinetiSense design system
 
-The look and structure for the web viewer in `web/`. Written by Claude from screenshots of raisedhand.ai and heylemon.ai, and logged in `AI_USAGE.md`. A working example lives in `web/reference/`. To run it:
-
-```
-cd web/reference
-streamlit run app.py
-```
-
-The example is there to read and learn from. Build the real thing yourselves in `web/app.py`. If any of it gets copied in, write that down in `AI_USAGE.md`.
+The look and structure of the web app in `web/`. Claude wrote this spec and the app from screenshots and the real CSS of raisedhand.ai and heylemon.ai. Both are logged in `AI_USAGE.md`.
 
 ## The idea in one line
 
-A dark, quiet page with one accent color, thin borders, and motion only where it helps someone read the data. The direction is raisedhand.ai, with one borrowed detail from heylemon.ai: the small spaced out mono labels.
+raisedhand's dark navy canvas and light blue accent, with heylemon's serif headings, mono labels, pastel number cards and cream buttons. Every number on screen comes with a plain sentence that says what it means.
+
+## What came from where
+
+| From raisedhand.ai | From heylemon.ai |
+|---|---|
+| Near black navy page with a soft glow at the top | Serif headings with one word in italics ("Every throw, *explained*.") |
+| Light blue accent `#9dbcff` on the italic words | Small mono labels in caps, like "• HOW IT WORKS •" |
+| Fade up out of a blur animation, curve `cubic-bezier(.32,.72,0,1)` | Big rounded hero card with a color gradient and film grain |
+| Thin strip across the top (we use it for the demo data notice) | Numbered steps: 01 · STRAP ON, 02 · THROW, 03 · READ |
+| Pill shaped buttons | Pastel number cards (violet, green, peach) and the cream button |
 
 ## Fonts
 
+All free from Google Fonts. `web/.streamlit/config.toml` loads them.
+
 | Use | Font | Weight | Size |
 |---|---|---|---|
-| Everything (body, buttons, inputs) | Inter | 400 | 15 to 16px |
-| Page title (h1) | Inter | 600 | 40px (2.5rem) |
-| Card title (h2/h3) | Inter | 600 | 18 to 22px |
-| Big numbers (`st.metric`) | Inter | 400 | 32px (2rem) |
-| Eyebrow labels above titles | JetBrains Mono | 500 | 11px, UPPERCASE, letter spacing 0.14em |
-
-Two families only. Both load from Google Fonts in `config.toml`, so there are no font files to manage.
+| Body, buttons, inputs | Inter | 400 | 16px |
+| Page titles and card titles | Source Serif 4 (italic for the accent word) | 500 | 48px titles, 72px on the home hero |
+| Big numbers | Source Serif 4 | 500 | 42px |
+| Small labels above titles | Geist Mono | 500 | 11.5px, caps, letter spacing 0.16em |
 
 ## Colors
 
 | Token | Hex | Where it goes |
 |---|---|---|
-| Page | `#05070b` | page background |
-| Card | `#0b0e14` | card background |
-| Input | `#0d1118` | dropdowns, inputs |
-| Border | `#1c2230` | every border |
-| Border hover | `#2c3550` | card border on hover |
-| Text | `#e6e8ee` | main text |
-| Muted text | `#8b93a7` | subtitles, eyebrow labels |
-| Faint | `#5b6378` | hover crosshair line |
-| Accent | `#8fa8ff` | selected nav, focus, the single throw chart line |
-| Warning | `#fab219` | DEMO DATA label, sensor range line |
+| Page | `#05070d` | background, with a navy glow `#1d2b5c` at the top |
+| Card | white at 2.5% | card background |
+| Card border | white at 7%, 15% on hover | every card |
+| Text | `#eceef4` | main text |
+| Muted text | `#a3aabb` | descriptions, notes |
+| Accent | `#9dbcff` | italic heading words, selected tab, the one throw chart line |
+| Warning | `#fab219` | demo banner, sensor limit line, throws that hit the limit |
+| Cream | `#fbfbed` | main button, the peak marker |
+| Pastels | `#c5c2ff`, `#bcec70`, `#ffcb87` | the three number cards on All throws |
 
-Chart lines when comparing throws, in this order: `#3987e5`, `#d95926`, `#199e70`.
+Compare chart lines, in this order: `#3987e5`, `#d95926`, `#199e70`. They passed a colorblind check against the card color. A fourth color does not pass, so Compare stops at 3 throws.
 
-These three were run through a colorblind checker against the card color and passed. A fourth color does not pass, so Compare allows three throws at most.
+## Shape and motion
 
-Rule: one accent. No gold borders, no glows, no gradients, no glass blur.
+- Cards: 26px corners, 26px padding. Hero: 32px corners. Buttons: full pill.
+- One animation: cards fade up 10px out of a 14px blur over 0.8s. Cards in a row start 0.1s apart.
+- Hover: card border gets a little brighter. Nothing else moves.
+- Charts: hover shows a line and a tooltip written in words ("54 ms before the fastest moment").
+- If the computer asks for reduced motion, all of it turns off.
 
-## Shape and spacing
+## Pages
 
-- Cards: 20px corner radius, 1px border, 24px padding.
-- Inputs and buttons: 14px radius (`baseRadius` in `config.toml`).
-- Space between cards: Streamlit's default gap. Do not add margins by hand.
-
-## Motion
-
-Only three things move.
-
-| What | How | Timing |
-|---|---|---|
-| Cards appearing on page load | rise 12px, fade in, unblur 4px | 0.6s, curve `cubic-bezier(.2,.7,.3,1)`, each card 0.08s after the last |
-| Card hover | border color only | 0.2s |
-| Charts | Altair's built in hover crosshair | instant |
-
-Nothing loops, pulses or bounces. If the computer has "reduce motion" turned on, all of it switches off (`prefers-reduced-motion`).
-
-## How the files are laid out
-
-```
-web/
-  .streamlit/config.toml   theme: colors, fonts, radius (no CSS needed for these)
-  app.py
-    constants              data folder, sensor limit, accent, max compare
-    st.set_page_config
-    styles                 one st.html <style> block: keyframe, card, eyebrow, reduced motion
-    load_data()            reads both CSVs, checks columns, stops with a clear error
-    throw_window()         one throw's samples, time measured from its peak
-    header()               eyebrow + title + one line description
-    line_chart()           Altair line with hover crosshair
-    throw_page()           select throw, 3 metrics, chart (Combined or Per axis)
-    compare_page()         pick up to 3 throws, overlay chart, small table
-    about_page()           what it does, what it does not, sensor range, AI use
-    st.navigation(..., position="top")
-```
-
-Each page is a function. Navigation sits along the top like a website, not in a sidebar.
+1. **Start here**: hero, the three steps, six cards that explain every number (°/s, peak, ms, throw numbers, sensor limit, x y z), and what it does not measure.
+2. **All throws**: three pastel number cards, then a bar per throw with the session average and limit hits marked.
+3. **One throw**: pick a throw, three explained numbers (top spin with turns per second, % vs the session average with rank, sensor limit status), then the chart with a "How to read this" list beside it. A switch shows spin in each direction with the 4,000 limit line.
+4. **Compare**: up to 3 throws lined up at their fastest moment, plus a small table.
+5. **About**: what it is, what it does not do, where the data comes from, the sensor limit, AI use.
 
 ## Streamlit rules that will bite you
 
-1. **Theme goes in `config.toml`, not CSS.** That one file fixes the white header bar, the red radio dots, the input colors and the fonts. Run `streamlit` from the folder that contains `.streamlit/`, or the theme will not load.
-2. **Cards come from `st.container(key="card1")`.** Streamlit adds a CSS class `st-key-card1`, and your CSS targets that. Opening `<div>` in one `st.markdown` and closing it in another does not work. It draws an empty box.
-3. **Put CSS in `st.html("<style>...</style>")`, not `st.markdown`.** In testing, CSS variables like `--i` broke inside `st.markdown`.
-4. **Never write selectors on Streamlit's own structure** like `.stMainBlockContainer>div>div`. They broke in testing and will break on updates. Only style things you named with `key=`.
-5. **Use `st.metric(..., border=True)` and `st.altair_chart`.** Do not hand write HTML metric cards or use matplotlib. Altair charts let judges hover and read exact values. A matplotlib picture can't do that.
+1. Theme goes in `config.toml`. Run `streamlit` from `web/` or it won't load.
+2. Streamlit loads the heading font but does not apply it, so `app.py` sets it on `h1, h2, h3` in CSS.
+3. Cards come from `st.container(key="card1")`. Streamlit adds the class `st-key-card1`, and the CSS targets that.
+4. Put CSS in `st.html("<style>...</style>")`, not `st.markdown`.
+5. Never write CSS selectors on Streamlit's own structure. Only style things you named with `key=`.
 
 ## Words on screen
 
-Every label has to be true for the data behind it. Judges can open the code.
+Every label has to be true for the data behind it.
 
-| Do not write | Write instead | Why |
-|---|---|---|
-| "Active dataset verified" | "Demo data, synthetic" | The data is generated, not recorded |
-| "Optimal ✓" | "Within range" | Not clipped does not mean good |
-| "Elite arm acceleration" | "One axis reached 4,000 °/s" | Clipping says nothing about skill |
-| "Peak Acceleration Point" | "Peak angular velocity" | The dot is velocity, not acceleration |
-| "Time to Peak Arm Speed" | "Peak happened at" | It is a time stamp in the recording |
-| "Overlapping curves prove consistency" | "Similar shapes suggest similar timing" | A few throws prove nothing |
-| 4000 line on the combined curve | 4000 line on the Per axis view only | The limit is per axis. The combined value can go past 4000 without clipping |
+| Do not write | Write instead |
+|---|---|
+| Active dataset verified | Demo mode: these throws were made by a computer |
+| Optimal | In range |
+| Elite arm acceleration | One direction reached 4,000 °/s |
+| Peak Acceleration Point | Fastest moment |
+| Time to Peak Arm Speed | (dropped, it was a timestamp) |
+| Overlapping curves prove consistency | Similar shapes mean similar timing. A few throws can't prove consistency |

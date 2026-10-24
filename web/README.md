@@ -1,6 +1,8 @@
 # web/
 
-Streamlit web viewer that replays finished throws: metrics table, per-throw graph, multi-throw comparison, and an About and Limits page. It only displays data. Peaks, magnitudes and clipped flags are computed in `ml/` and arrive as finished columns in the data files.
+Streamlit app that shows finished throws in plain language: a Start here page that explains every number, an All throws overview, a One throw page, a Compare page, and an About page. It only displays data. Peaks, magnitudes and clipped flags are computed in `ml/` and arrive as finished columns in the data files.
+
+Claude (AI) wrote this version of the app and its theme. See `AI_USAGE.md`.
 
 ## Run locally
 
@@ -10,9 +12,15 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+Run it from inside `web/`. The colors and fonts live in `web/.streamlit/config.toml`, and Streamlit only reads that file from the folder you start in.
+
+## Look and feel
+
+Dark navy canvas and light blue accent from raisedhand.ai. Serif headings, mono labels, pastel stat cards and cream buttons from heylemon.ai. Full spec in `docs/design_system.md`.
+
 ## Data
 
-`sample_data/demo_throws.csv` and `sample_data/demo_samples.csv` are synthetic stand-in data made by `tools/make_demo_data.py`. They are not a real recording. The app shows a DEMO DATA banner while `DATA_IS_SYNTHETIC = True` in `app.py`.
+`sample_data/demo_throws.csv` and `sample_data/demo_samples.csv` are synthetic stand-in data made by `tools/make_demo_data.py`. They are not a real recording. The app shows a Demo mode banner while `DATA_IS_SYNTHETIC = True` in `app.py`.
 
 ## Swap day (when real data exists)
 

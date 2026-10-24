@@ -40,6 +40,15 @@ Required for the Congressional App Challenge. Every AI contribution is listed he
 | Reference code | `web/reference/app.py`, `web/reference/.streamlit/config.toml` | At the student's request, Claude wrote a complete reference version of the web viewer that shows the design system working (theme config, keyed cards, one entrance animation, Altair charts with hover, honest labels). It is a separate example to read, not the submission app. If any of it is copied into `web/app.py`, that must be logged here as Claude written code. | Claude (reference only) |
 | Docs | `docs/design_system.md` and a shared Claude Docs copy | Claude wrote the design spec (fonts, colors, spacing, motion, file structure, Streamlit pitfalls, honest wording) for the student to send to the co-builder. Chart colors were checked with a colorblind palette validator. | Claude (documentation only) |
 
+## Session 4 (2026-10-24)
+
+| Area | File(s) | Kind of help | Who wrote the code |
+|---|---|---|---|
+| App code | `web/app.py` | At the student's request, Claude rewrote the whole web app: five pages (Start here, All throws, One throw, Compare, About), plain language explanations of every number, hover tooltips written in words, and the new design. The co-builder's earlier version is replaced. | Claude |
+| Theme | `web/.streamlit/config.toml` | Claude wrote the theme (colors, fonts, radius) blending raisedhand.ai and heylemon.ai, based on their real CSS. | Claude |
+| Docs | `docs/design_system.md`, `web/README.md`, `web/requirements.txt` | Claude rewrote the design spec and README, removed matplotlib and pinned altair. Removed `web/reference/`, which the new app replaces. | Claude |
+| Testing | none | Claude ran the app in a browser, checked every page, hover tooltips, the home buttons, a phone sized screen, and a broken data file. Chart colors were checked with a colorblind palette validator. | n/a |
+
 ## Template for future sessions
 
 | Area | File(s) | Kind of help | Who wrote the code |

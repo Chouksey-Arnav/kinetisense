@@ -1,0 +1,29 @@
+# KinetiSense theme. Streamlit reads this file when you run the app from the web/ folder.
+# Colors and fonts come from two sites we liked:
+#   raisedhand.ai : the dark navy canvas and the light blue accent
+#   heylemon.ai   : the serif headings, the mono labels and the cream buttons
+# Claude (AI) wrote this file. It's logged in AI_USAGE.md.
+
+[theme]
+base = "dark"
+primaryColor = "#9dbcff"              # light blue accent (raisedhand). Selected tabs, focus rings, chart line
+backgroundColor = "#05070d"           # page background, almost black with a little navy
+secondaryBackgroundColor = "#0e1322"  # dropdowns and inputs
+textColor = "#eceef4"                 # main text
+borderColor = "#1d2335"               # every thin border
+linkColor = "#9dbcff"
+
+# Three fonts, all free from Google Fonts:
+#   Inter for normal text, Source Serif 4 for headings (with italics), Geist Mono for small labels
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+headingFont = "Source Serif 4:https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400..600;1,8..60,400..600&display=swap"
+codeFont = "Geist Mono:https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500&display=swap"
+headingFontWeights = [500, 500, 500, 500, 500, 500]
+headingFontSizes = ["3rem", "2rem", "1.25rem"]
+
+baseRadius = "14px"
+buttonRadius = "999px"                # pill buttons, like both sites
+chartCategoricalColors = ["#3987e5", "#d95926", "#199e70"]  # passed a colorblind check, so Compare stops at 3
+
+[client]
+toolbarMode = "viewer"                # hides the Deploy button so judges don't get distracted
