@@ -1,0 +1,9 @@
+throw_id,peak_time_s,peak_dps,clipped
+1,5.394,4338.3,True
+2,11.929,2149.5,False
+3,18.971,2981.6,False
+4,27.121,4901.2,False
+5,33.459,4080.4,True
+6,39.862,3134.1,False
+7,47.738,4537.2,False
+8,54.171,4120.5,False
