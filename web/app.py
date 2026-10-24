@@ -1,361 +1,448 @@
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
+# KinetiSense web app
+#
+# Heads up: Claude (an AI) wrote this file when we asked it to redesign the app.
+# Every AI part of this project is logged in AI_USAGE.md. Don't delete this note.
+#
+# What this app does: it shows throws recorded by the KinetiSense forearm sensor.
+# It only DISPLAYS data. The math that finds each throw and its peak lives in ml/.
+#
+# How to run it:
+#   cd web
+#   streamlit run app.py
+# (You have to be inside web/ or the theme in web/.streamlit/config.toml won't load.)
+
 from pathlib import Path
 
-# --- CONSTANTS ---
-SENSOR_LIMIT_DPS = 4000
-DATA_IS_SYNTHETIC = True
+import altair as alt
+import pandas as pd
+import streamlit as st
 
-# --- PAGE CONFIG ---
-st.set_page_config(
-    page_title="KinetiSense | Elite Baseball Telemetry Engine",
-    page_icon="⚾",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# ---------------------------------------------------------------
+# Settings. Change things here, not deep in the code.
+# ---------------------------------------------------------------
+DATA_DIR = Path(__file__).resolve().parent / "sample_data"
+DATA_IS_SYNTHETIC = True  # only flip to False when the CSVs are REAL recordings
+SENSOR_LIMIT = 4000       # most the sensor can read in one direction (°/s). From the datasheet, not tested yet
+WINDOW_MS = 200           # how far before and after the peak we show on the throw chart
+MAX_COMPARE = 3           # our chart colors only pass the colorblind check for 3 lines
 
-# --- CANVAS-STYLE STAGGERED ANIMATIONS & LUXURY SaaS CSS (v14) ---
-st.markdown("""
-<style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
+BLUE, FAINT, WARN = "#9dbcff", "#5b6378", "#fab219"
+PASTELS = ["#c5c2ff", "#bcec70", "#ffcb87"]  # violet, green, peach from heylemon.ai
 
-    /* Global App Styling */
-    .stApp {
-        background-color: #04060b;
-        color: #e2e8f0;
-        font-family: 'Inter', sans-serif;
-    }
-    
-    /* Canva-style Staggered Slide-Up & Fade Animations */
-    @keyframes canvaSlideUp1 {
-        0% { opacity: 0; transform: translateY(20px); }
-        100% { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes canvaSlideUp2 {
-        0% { opacity: 0; transform: translateY(30px); }
-        100% { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes canvaSlideUp3 {
-        0% { opacity: 0; transform: translateY(40px); }
-        100% { opacity: 1; transform: translateY(0); }
-    }
+# The columns each CSV has to have, or the app stops with a clear message
+NEEDED = {"demo_throws.csv": {"throw_id", "peak_time_s", "peak_dps", "clipped"},
+          "demo_samples.csv": {"throw_id", "time_s", "gx", "gy", "gz", "gyro_mag"}}
 
-    /* Apply stagger effects to page elements */
-    h1 {
-        animation: canvaSlideUp1 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    .hero-card {
-        animation: canvaSlideUp1 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
-        opacity: 0;
-    }
-    .saas-metric-grid {
-        animation: canvaSlideUp2 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
-        opacity: 0;
-    }
-    .saas-card {
-        animation: canvaSlideUp3 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
-        opacity: 0;
-    }
+st.set_page_config(page_title="KinetiSense", page_icon="⚾", layout="wide")
 
-    /* Professional Sidebar */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #090e1a 0%, #04060b 100%);
-        border-right: 1px solid rgba(251, 191, 36, 0.15);
-    }
-    section[data-testid="stSidebar"] .stRadio label {
-        font-family: 'Inter', sans-serif;
-        font-weight: 500;
-        color: #94a3b8;
-    }
+# ---------------------------------------------------------------
+# Styles. Colors and fonts are in config.toml, so this is only the
+# stuff a config file can't do: cards, the hero, labels and motion.
+# Every card is an st.container(key="card...") so we can target it here.
+# ---------------------------------------------------------------
+GRAIN = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E"
+         "%3CfeTurbulence type='fractalNoise' baseFrequency='.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")
+st.html(f"""<style>
+/* soft navy glow at the top of every page (raisedhand) */
+.stApp {{ background: radial-gradient(1100px 520px at 50% -8%, #1d2b5c66, transparent 70%), #05070d; }}
+/* serif headings (heylemon). config.toml loads the font, but Streamlit doesn't put it on headings for us */
+h1, h2, h3 {{ font-family: 'Source Serif 4', Georgia, serif !important; letter-spacing: -.02em; }}
+h1 em, h2 em {{ color: {BLUE}; }}
 
-    /* Typography */
-    h1, h2, h3, h4 {
-        font-family: 'Outfit', sans-serif !important;
-        letter-spacing: -0.03em !important;
-        color: #ffffff !important;
-    }
-    
-    /* Luxury Glassmorphism Squircle Cards */
-    .saas-card {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(10, 15, 28, 0.75) 100%);
-        border: 1px solid rgba(251, 191, 36, 0.18);
-        border-radius: 24px;
-        padding: 32px;
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        margin-bottom: 28px;
-        backdrop-filter: blur(24px);
-    }
-    
-    /* Contrast Hero Card */
-    .hero-card {
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%);
-        border-left: 4px solid #fbbf24;
-        border-top: 1px solid rgba(251, 191, 36, 0.2);
-        border-right: 1px solid rgba(251, 191, 36, 0.2);
-        border-bottom: 1px solid rgba(251, 191, 36, 0.2);
-        border-radius: 0 20px 20px 0;
-        padding: 24px 28px;
-        margin-bottom: 24px;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-    }
+/* one animation for the whole app: fade up out of a blur (raisedhand's "lp-focus") */
+@keyframes focus {{ from {{ opacity: 0; filter: blur(14px); transform: translateY(10px); }} }}
+[class*="st-key-card"], .st-key-hero {{ animation: focus .8s cubic-bezier(.32,.72,0,1) both; }}
+.st-key-card2, .st-key-card5, .st-key-card8 {{ animation-delay: .1s; }}  /* cards in a row come in one after another */
+.st-key-card3, .st-key-card6, .st-key-card9 {{ animation-delay: .2s; }}
 
-    /* Golden Accent Metric Grid */
-    .saas-metric-grid {
-        display: flex;
-        gap: 24px;
-        margin-bottom: 28px;
-    }
-    .saas-metric-card {
-        flex: 1;
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(8, 12, 22, 0.9) 100%);
-        border: 1px solid rgba(251, 191, 36, 0.25);
-        border-radius: 20px;
-        padding: 24px 26px;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(16px);
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .saas-metric-card:hover {
-        border-color: rgba(251, 191, 36, 0.7);
-        transform: translateY(-3px);
-        box-shadow: 0 18px 45px rgba(251, 191, 36, 0.15);
-    }
-    .metric-title {
-        font-family: 'Inter', sans-serif;
-        font-size: 11px;
-        color: #fbbf24;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        margin-bottom: 8px;
-    }
-    .metric-val {
-        font-family: 'Outfit', sans-serif;
-        font-size: 30px;
-        color: #ffffff;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-    }
-    
-    /* Input Styling */
-    div.stSelectbox > div > div, div.stMultiSelect > div > div {
-        background-color: #0b101d !important;
-        border: 1px solid rgba(251, 191, 36, 0.3) !important;
-        border-radius: 14px !important;
-        color: white !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+/* cards: big soft corners (heylemon), thin border, border lights up on hover */
+[class*="st-key-card"] {{ background: #ffffff06; border: 1px solid #ffffff12; border-radius: 26px; padding: 26px;
+                          transition: border-color .25s; }}
+[class*="st-key-card"]:hover {{ border-color: #ffffff26; }}
 
-if DATA_IS_SYNTHETIC:
-    st.warning("⚡ CONGRESSIONAL APP CHALLENGE DEMO MODE: Active dataset verified for presentation review.")
+/* the hero: violet (heylemon) melting into navy (raisedhand), with a little film grain */
+.st-key-hero {{ position: relative; overflow: hidden; border-radius: 32px; padding: 72px 48px; text-align: center;
+               background: radial-gradient(90% 70% at 50% 0%, #574cfd55, transparent 65%),
+                           radial-gradient(70% 60% at 85% 100%, #2a4690aa, transparent 70%), #0b0f1c; }}
+.st-key-hero::before {{ content: ""; position: absolute; inset: 0; background: url("{GRAIN}"); opacity: .07; pointer-events: none; }}
+.st-key-hero h1 {{ font-size: clamp(2.6rem, 6vw, 4.6rem); line-height: 1.05; }}
+.st-key-hero h1, .st-key-hero p {{ text-align: center; margin-left: auto; margin-right: auto; }}
 
-# --- BULLETPROOF DATA LOADING ---
+/* small mono labels above titles, like "• HOW IT WORKS •" (heylemon) */
+.eyebrow {{ font: 500 11.5px 'Geist Mono', monospace; letter-spacing: .16em; text-transform: uppercase; color: #8b93a7; margin: 0; }}
+.lede {{ color: #a3aabb; font-size: 16.5px; line-height: 1.6; max-width: 640px; margin: 0; }}
+.step {{ font: 500 11px 'Geist Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: {BLUE}; }}
+
+/* big number cards. Pastel ones copy heylemon's stat row */
+.stat {{ border-radius: 22px; padding: 22px 24px; height: 100%; background: #ffffff08; border: 1px solid #ffffff12; }}
+.stat .big {{ font: 500 2.6rem/1.1 'Source Serif 4', serif; letter-spacing: -.02em; }}
+.stat .label {{ font-weight: 600; margin-top: 6px; }}
+.stat .note {{ color: #a3aabb; font-size: 14px; line-height: 1.5; margin-top: 8px; }}
+.stat.pastel {{ color: #1a1a17; border: 0; }}
+.stat.pastel .note {{ color: #1a1a17b3; }}
+
+/* the cream pill button (heylemon) */
+[data-testid="stBaseButton-primary"] {{ background: #fbfbed; color: #1a1a17; border: 0; }}
+[data-testid="stBaseButton-primary"]:hover {{ background: #ffffff; color: #1a1a17; }}
+
+/* thin strip across the top of every page (raisedhand has one for its launch offer) */
+.banner {{ text-align: center; font-size: 13.5px; color: #e9d9b0; background: #fab21914; border: 1px solid #fab21933;
+           border-radius: 999px; padding: 8px 16px; margin: 0 auto; max-width: 760px; }}
+
+/* if someone's computer asks for less motion, we turn all of it off */
+@media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; transition: none !important; }} }}
+</style>""")
+
+
+# ---------------------------------------------------------------
+# Loading the data
+# ---------------------------------------------------------------
 @st.cache_data
 def load_data():
-    possible_dirs = [
-        Path(__file__).parent / "sample_data",
-        Path(__file__).parent.parent / "data",
-        Path(__file__).parent.parent / "sample_data"
+    """Read both CSVs, check them, and add the plain-English numbers we show everywhere."""
+    frames = {}
+    for name, cols in NEEDED.items():
+        path = DATA_DIR / name
+        if not path.exists():
+            st.error(f"Can't find {path}. The app needs both CSV files in web/sample_data/.")
+            st.stop()
+        df = pd.read_csv(path)
+        missing = cols - set(df.columns)
+        if df.empty or missing:
+            st.error(f"{name} is empty or missing these columns: {sorted(missing)}")
+            st.stop()
+        df["throw_id"] = df["throw_id"].astype(str)
+        frames[name] = df
+
+    throws, samples = frames["demo_throws.csv"], frames["demo_samples.csv"]
+    throws["turns"] = throws.peak_dps / 360  # 360° is one full turn, so this is turns per second
+    throws["rank"] = throws.peak_dps.rank(ascending=False, method="min").astype(int)  # 1 = fastest
+    throws["vs_avg"] = (throws.peak_dps / throws.peak_dps.mean() - 1) * 100       # % above or below average
+    return throws, samples
+
+
+def throw_window(throw_id):
+    """One throw's samples, with time counted in milliseconds from its fastest moment."""
+    throws, samples = load_data()
+    peak_time = throws.loc[throws.throw_id == throw_id, "peak_time_s"].iloc[0]
+    w = samples[samples.throw_id == throw_id].copy()
+    w["t_ms"] = ((w.time_s - peak_time) * 1000).round().astype(int)
+    w = w[w.t_ms.abs() <= WINDOW_MS]
+    # words for the hover tooltip, so nobody has to decode "-33"
+    w["when"] = w.t_ms.map(lambda t: "the fastest moment" if t == 0
+                           else f"{abs(t)} ms {'before' if t < 0 else 'after'} the fastest moment")
+    w["turns"] = w.gyro_mag / 360
+    return w
+
+
+# ---------------------------------------------------------------
+# Little helpers so every page looks the same
+# ---------------------------------------------------------------
+def ordinal(n):
+    """1 -> 1st, 2 -> 2nd, 3 -> 3rd, 11 -> 11th"""
+    return f"{n}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(n if n < 20 else n % 10, 'th') }"
+
+
+def eyebrow(text):
+    st.html(f'<p class="eyebrow">• {text} •</p>')
+
+
+def lede(text):
+    st.html(f'<p class="lede">{text}</p>')
+
+
+def stat(big, label, note, color=None):
+    """A big number with a label and one plain sentence under it."""
+    cls, bg = ("stat pastel", f' style="background:{color}"') if color else ("stat", "")
+    st.html(f'<div class="{cls}"{bg}><div class="big">{big}</div>'
+            f'<div class="label">{label}</div><div class="note">{note}</div></div>')
+
+
+def hover(base, tooltip):
+    """The hover crosshair: a line follows your mouse and a tooltip shows the numbers there."""
+    pick = alt.selection_point(fields=["t_ms"], nearest=True, on="pointerover", empty=False)
+    rule = base.mark_rule(color=FAINT).encode(
+        opacity=alt.condition(pick, alt.value(1), alt.value(0)), tooltip=tooltip).add_params(pick)
+    return rule, pick
+
+
+X_AXIS = alt.X("t_ms:Q", title="Milliseconds from the fastest moment (0 = fastest, minus = before)")
+
+
+# ---------------------------------------------------------------
+# Page 1: Start here. Explains everything before showing any data.
+# ---------------------------------------------------------------
+def home_page():
+    throws, _ = load_data()
+
+    with st.container(key="hero"):
+        eyebrow("Meet KinetiSense · forearm spin tracker")
+        st.title("Every throw, *explained*.", anchor=False)
+        lede("A small sensor straps to a pitcher's forearm and records how fast the forearm spins during each throw. "
+             "This app turns those numbers into something any coach, player or judge can read.")
+        st.write("")
+        _, left, right, _ = st.columns([1, 1.2, 1.2, 1])  # the empty columns keep the buttons centered
+        if left.button("See all throws", type="primary", use_container_width=True):
+            st.switch_page(PAGES["all"])
+        if right.button("How to read the numbers", use_container_width=True):
+            st.switch_page(PAGES["one"])
+
+    st.write("")
+    eyebrow("How it works")
+    st.header("Strap on. Throw. *Read it.*", anchor=False)
+    steps = [("01 · Strap on", "The sensor sits on the outside of the throwing forearm, held by a strap."),
+             ("02 · Throw", "It measures spin many times per second. In this demo it's 1,000 times per second, "
+                            "so we catch the arm's fastest moment."),
+             ("03 · Read", "Each throw shows up here: its top spin speed, when it happened, and a chart of the whole motion.")]
+    for i, (col, (title, body)) in enumerate(zip(st.columns(3), steps), start=1):
+        with col.container(key=f"card{i}"):
+            st.html(f'<div class="step">{title}</div>')
+            st.write(body)
+
+    st.write("")
+    eyebrow("The numbers in plain words")
+    st.header("What every number *means*", anchor=False)
+    words = [
+        ("°/s (degrees per second)", "How fast the forearm is spinning. One full turn is 360°, "
+         "so 3,600 °/s means 10 full turns per second at that instant."),
+        ("Peak, or fastest moment", "The single instant in a throw when the forearm spins the fastest. "
+         "Every chart lines up at this moment, called 0."),
+        ("ms (milliseconds)", "One thousandth of a second. 100 ms is a tenth of a second. "
+         "−50 ms means 50 ms before the fastest moment."),
+        ("Throw 1, Throw 2, …", "Throws are numbered in the order they happened in the session."),
+        ("Sensor limit (4,000 °/s)", "The most the sensor can read in one direction. If a throw hits it, "
+         "the real speed was at least that high, so we flag it."),
+        ("x, y, z", "The sensor tracks spin around three directions, like three skewers through the forearm "
+         "at right angles. The 4,000 limit applies to each one on its own."),
     ]
-    
-    data_dir = None
-    for d in possible_dirs:
-        if (d / "demo_throws.csv").exists() and (d / "demo_samples.csv").exists():
-            data_dir = d
-            break
-            
-    if data_dir is None:
-        st.error("Error: Could not locate demo CSV files in project directories.")
-        st.stop()
-        
-    throws_df = pd.read_csv(data_dir / "demo_throws.csv")
-    samples_df = pd.read_csv(data_dir / "demo_samples.csv")
-    
-    if throws_df.empty or samples_df.empty:
-        st.error("Error: Dataset CSV files are empty.")
-        st.stop()
-        
-    throws_df['throw_id'] = throws_df['throw_id'].astype(str)
-    samples_df['throw_id'] = samples_df['throw_id'].astype(str)
-    
-    return throws_df, samples_df
+    for start, row in ((4, words[:3]), (7, words[3:])):  # two rows of three
+        for i, (col, (term, meaning)) in enumerate(zip(st.columns(3), row), start=start):
+            with col.container(key=f"card{i}"):
+                st.subheader(term, anchor=False)
+                st.write(meaning)
 
-throws_df, samples_df = load_data()
+    st.write("")
+    with st.container(key="cardlimits"):
+        st.subheader("What it does *not* measure", anchor=False)
+        st.write("KinetiSense does not measure pitch speed (mph), ball spin, injury risk or arm health. "
+                 "It measures forearm spin only. Turning that into pitch speed would need radar testing we haven't done yet.")
 
-# --- SIDEBAR NAVIGATION ---
-st.sidebar.markdown("### ⚾ KinetiSense")
-st.sidebar.caption("Youth Pitching Analytics Platform")
-st.sidebar.divider()
-page = st.sidebar.radio("Navigation", ["Throw Analysis", "Compare Throws", "About & System Scope"])
-st.sidebar.divider()
-st.sidebar.info("💡 **Judge Note:** Restart Streamlit app after swapping custom CSV datasets.")
 
-# ==========================================
-# PAGE 1: THROW ANALYSIS
-# ==========================================
-if page == "Throw Analysis":
-    st.title("Pitch Telemetry & Arm Speed Analysis")
-    st.markdown(
-        '<div class="hero-card">'
-        '<b style="color: #fbbf24; font-size: 15px;">Understanding Your Delivery:</b><br>'
-        '<span style="color: #cbd5e1; font-size: 14px;">KinetiSense captures high-frequency forearm rotational velocity (measured in degrees per second) '
-        'to help high-pitched athletes evaluate arm speed consistency and mechanical efficiency without expensive motion labs.</span>'
-        '</div>', 
-        unsafe_allow_html=True
-    )
-    
-    st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-    selected_throw = st.selectbox("Select Individual Throw Record to Inspect:", throws_df['throw_id'].tolist())
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    throw_row = throws_df[throws_df['throw_id'] == selected_throw].iloc[0]
-    throw_samples = samples_df[samples_df['throw_id'] == selected_throw]
-    
-    is_clipped = bool(throw_row['clipped'])
-    status_color = "#f43f5e" if is_clipped else "#34d399"
-    status_text = "Clipped ⚠️" if is_clipped else "Optimal ✓"
-    
-    # Custom Golden SaaS Metric Cards
-    st.markdown(f"""
-    <div class="saas-metric-grid">
-        <div class="saas-metric-card">
-            <div class="metric-title">Peak Rotational Velocity</div>
-            <div class="metric-val">{throw_row['peak_dps']:.1f} <span style="font-size: 14px; color: #fbbf24; font-weight: 500;">°/s</span></div>
-        </div>
-        <div class="saas-metric-card">
-            <div class="metric-title">Time to Peak Arm Speed</div>
-            <div class="metric-val">{throw_row['peak_time_s']:.2f} <span style="font-size: 14px; color: #fbbf24; font-weight: 500;">sec</span></div>
-        </div>
-        <div class="saas-metric-card">
-            <div class="metric-title">Sensor Saturation Status</div>
-            <div class="metric-val" style="color: {status_color};">{status_text}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if is_clipped:
-        st.error(
-            f"⚠️ **Sensor Saturation Notice:** The IMU sensor reached its maximum hardware per-axis detection limit ({SENSOR_LIMIT_DPS} deg/s) during this throw. "
-            f"This indicates elite arm acceleration—meaning the true rotational speed was even higher than the sensor's maximum recorded threshold."
-        )
-        
-    # Elite Matplotlib Chart Card
-    st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-    st.subheader(f"Rotational Velocity Profile — Throw {selected_throw}")
-    st.markdown("<p style='color: #94a3b8; font-size: 13px; margin-bottom: 20px;'>High-resolution angular velocity tracking centered around the release point.</p>", unsafe_allow_html=True)
-    
-    fig, ax = plt.subplots(figsize=(10, 4.4))
-    fig.patch.set_facecolor('#070b14')
-    ax.set_facecolor('#0b101d')
-    
-    if not throw_samples.empty:
-        time_rel = throw_samples['time_s'] - throw_row['peak_time_s']
-        ax.plot(time_rel, throw_samples['gyro_mag'], label="Combined Gyro Magnitude (°/s)", color="#fbbf24", linewidth=2.8)
-    
-    ax.axhline(y=SENSOR_LIMIT_DPS, color="#f43f5e", linestyle="--", linewidth=2, label="Hardware Saturation Limit (4,000 °/s)")
-    ax.scatter([0], [throw_row['peak_dps']], color="#38bdf8", s=100, zorder=5, label="Peak Acceleration Point", edgecolor='#ffffff', linewidth=1.5)
-    
-    ax.set_xlabel("Time Relative to Peak (Seconds)", color="#94a3b8", fontsize=11, fontweight='600', labelpad=10)
-    ax.set_ylabel("Angular Velocity (°/s)", color="#94a3b8", fontsize=11, fontweight='600', labelpad=10)
-    
-    ax.tick_params(colors='#94a3b8', labelsize=10)
-    for spine in ax.spines.values():
-        spine.set_edgecolor('#1e293b')
-        spine.set_linewidth(1.5)
-        
-    ax.legend(loc="upper right", facecolor='#0b101d', edgecolor='#334155', labelcolor='#f3f4f6', fontsize=10)
-    ax.grid(True, linestyle=":", alpha=0.3, color='#475569')
-    
-    st.pyplot(fig)
-    plt.close(fig)
-    st.caption("Coach Tip: The gold curve displays combined vector magnitude. The blue marker highlights the exact millisecond of peak forearm snap.")
-    st.markdown('</div>', unsafe_allow_html=True)
+# ---------------------------------------------------------------
+# Page 2: All throws. The whole session at a glance.
+# ---------------------------------------------------------------
+def all_page():
+    throws, _ = load_data()
+    fastest = throws.loc[throws.peak_dps.idxmax()]
+    hit = int(throws.clipped.sum())
 
-# ==========================================
-# PAGE 2: COMPARE THROWS
-# ==========================================
-elif page == "Compare Throws":
-    st.title("Multi-Throw Consistency Comparison")
-    st.markdown(
-        '<div class="hero-card">'
-        '<b style="color: #fbbf24; font-size: 15px;">Evaluating Mechanics:</b><br>'
-        '<span style="color: #cbd5e1; font-size: 14px;">Overlay multiple throws side-by-side to check consistency. '
-        'Consistent velocity curves indicate stable mechanics across different bullpen sessions.</span>'
-        '</div>', 
-        unsafe_allow_html=True
-    )
-    
-    st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-    selected_compared = st.multiselect("Select Throws for Comparative Overlay:", throws_df['throw_id'].tolist(), default=throws_df['throw_id'].tolist()[:2])
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    if not selected_compared:
-        st.info("Please select at least one throw above to render comparison graphs.")
-    else:
-        st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-        st.subheader("Comparative Rotational Telemetry Overlay")
-        st.markdown("<p style='color: #94a3b8; font-size: 13px; margin-bottom: 20px;'>Synchronized timeline comparing peak velocity profiles across selected throws.</p>", unsafe_allow_html=True)
-        
-        fig, ax = plt.subplots(figsize=(10, 4.4))
-        fig.patch.set_facecolor('#070b14')
-        ax.set_facecolor('#0b101d')
-        
-        colors = ['#fbbf24', '#38bdf8', '#34d399', '#f472b6', '#a78bfa']
-        for idx, t_id in enumerate(selected_compared):
-            t_row = throws_df[throws_df['throw_id'] == t_id].iloc[0]
-            t_samples = samples_df[samples_df['throw_id'] == t_id]
-            if not t_samples.empty:
-                time_rel = t_samples['time_s'] - t_row['peak_time_s']
-                line_color = colors[idx % len(colors)]
-                ax.plot(time_rel, t_samples['gyro_mag'], label=f"Throw {t_id}", color=line_color, linewidth=2.5)
-                
-        ax.axhline(y=SENSOR_LIMIT_DPS, color="#f43f5e", linestyle="--", linewidth=2, label="Saturation Limit (4,000 °/s)")
-        ax.set_xlabel("Time Relative to Peak (Seconds)", color="#94a3b8", fontsize=11, fontweight='600', labelpad=10)
-        ax.set_ylabel("Angular Velocity (°/s)", color="#94a3b8", fontsize=11, fontweight='600', labelpad=10)
-        
-        ax.tick_params(colors='#94a3b8', labelsize=10)
-        for spine in ax.spines.values():
-            spine.set_edgecolor('#1e293b')
-            spine.set_linewidth(1.5)
-            
-        ax.legend(loc="upper right", facecolor='#0b101d', edgecolor='#334155', labelcolor='#f3f4f6', fontsize=10)
-        ax.grid(True, linestyle=":", alpha=0.3, color='#475569')
-        
-        st.pyplot(fig)
-        plt.close(fig)
-        st.caption("Judge Review: Overlapping curves prove repeatable delivery timing and arm action consistency.")
-        st.markdown('</div>', unsafe_allow_html=True)
+    eyebrow("All throws")
+    st.title("The whole session, *at a glance*", anchor=False)
+    lede("Each bar is one throw. Taller means the forearm spun faster at its peak. Hover a bar for details.")
+    st.write("")
 
-# ==========================================
-# PAGE 3: ABOUT & SYSTEM SCOPE
-# ==========================================
-elif page == "About & System Scope":
-    st.title("About KinetiSense & System Scope")
-    st.markdown(
-        '<div class="hero-card">'
-        '<b style="color: #fbbf24; font-size: 15px;">Congressional App Challenge Submission:</b><br>'
-        '<span style="color: #cbd5e1; font-size: 14px;">Engineered by freshman developers to solve a real data gap in youth baseball training safely and affordably.</span>'
-        '</div>', 
-        unsafe_allow_html=True
-    )
-    
-    st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-    st.subheader("Project Overview & Architecture")
-    st.write(f"This active analysis dataset contains {len(throws_df)} verified throws. KinetiSense pairs an offline-processed Raspberry Pi Pico 2 W and Adafruit IMU sensor with a high-performance Streamlit analytics web viewer to track forearm rotational velocity.")
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-    st.subheader("System Boundaries & Disclosures")
-    st.warning(
-        "• **Motion Scope:** Measures forearm rotation and rotational velocity only (does not measure ball exit velocity, pitch speed, health status, or medical injury risk).\n"
-        "• **Hardware Thresholds:** The 4,000 deg/s limit represents per-axis hardware saturation. When reached, true rotational velocity exceeds recorded sensor output."
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="saas-card">', unsafe_allow_html=True)
-    st.subheader("AI Assistance Disclosure")
-    st.write("AI coding assistants were utilized during development to help structure code documentation, test data validation robustness, and refine user interface styling.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    a, b, c = st.columns(3)
+    with a:
+        stat(f"{len(throws)}", "throws in this session", "Numbered in the order they happened.", PASTELS[0])
+    with b:
+        stat(f"{fastest.peak_dps:,.0f} °/s", f"fastest throw (Throw {fastest.throw_id})",
+             f"About {fastest.turns:.1f} full turns per second at its peak.", PASTELS[1])
+    with c:
+        stat(f"{hit}", "throws hit the sensor limit",
+             f"Their real peak was at least {SENSOR_LIMIT:,} °/s in one direction.", PASTELS[2])
+
+    st.write("")
+    with st.container(key="card1"):
+        df = throws.assign(label="Throw " + throws.throw_id,
+                           status=throws.clipped.map({True: "Hit sensor limit", False: "Within sensor range"}))
+        bars = alt.Chart(df).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4, size=38).encode(
+            x=alt.X("label:N", sort=None, title=None, axis=alt.Axis(labelAngle=0)),
+            y=alt.Y("peak_dps:Q", title="Fastest spin in the throw (°/s)"),
+            color=alt.Color("status:N", title=None, legend=alt.Legend(orient="top"),
+                            scale=alt.Scale(domain=["Within sensor range", "Hit sensor limit"], range=[BLUE, WARN])),
+            tooltip=[alt.Tooltip("label:N", title="Throw"),
+                     alt.Tooltip("peak_dps:Q", title="Fastest spin (°/s)", format=",.0f"),
+                     alt.Tooltip("turns:Q", title="Turns per second", format=".1f"),
+                     alt.Tooltip("status:N", title="Sensor")])
+        # dashed line for the session average, so you can see which throws were above it
+        avg = alt.Chart(df).mark_rule(color="#a3aabb", strokeDash=[4, 4]).encode(y="mean(peak_dps):Q")
+        st.altair_chart((bars + avg).properties(height=340, background="transparent"), use_container_width=True)
+        st.caption(f"The dashed line is the session average ({throws.peak_dps.mean():,.0f} °/s). "
+                   "Yellow bars hit the sensor limit, so their real peak could be higher than the bar shows. "
+                   f"A throw can pass {SENSOR_LIMIT:,} in total without hitting the limit, "
+                   "because the limit is for each direction on its own.")
+
+
+# ---------------------------------------------------------------
+# Page 3: One throw, up close. Explains the chart right next to it.
+# ---------------------------------------------------------------
+def one_page():
+    throws, _ = load_data()
+
+    eyebrow("One throw")
+    st.title("One throw, *up close*", anchor=False)
+    lede("Pick a throw to see how fast the forearm spun, how that compares to the rest of the session, "
+         "and the whole motion from speeding up to slowing down.")
+    st.write("")
+
+    with st.container(key="card1"):
+        peaks = throws.set_index("throw_id").peak_dps
+        tid = st.selectbox("Pick a throw (numbered in the order they happened)", throws.throw_id,
+                           format_func=lambda t: f"Throw {t}  ·  {peaks[t]:,.0f} °/s")
+    row = throws.set_index("throw_id").loc[tid]
+
+    # three explained numbers instead of three bare ones
+    rank = "The fastest" if row["rank"] == 1 else f"{ordinal(row['rank'])} fastest"
+    above = "above" if row.vs_avg >= 0 else "below"
+    a, b, c = st.columns(3)
+    with a:
+        stat(f"{row.peak_dps:,.0f} °/s", "fastest spin in this throw",
+             f"That's about {row.turns:.1f} full turns of the forearm per second, for an instant.")
+    with b:
+        stat(f"{abs(row.vs_avg):.0f}% {above}", "this session's average",
+             f"{rank} of {len(throws)} throws in this session.")
+    with c:
+        if row.clipped:
+            stat("Hit limit", "sensor maxed out", f"One direction reached {SENSOR_LIMIT:,} °/s, the most the sensor "
+                 "can read. The real peak was at least as fast as shown.")
+        else:
+            stat("In range", "sensor did not max out", f"No direction reached the {SENSOR_LIMIT:,} °/s limit, "
+                 "so this peak is the full reading.")
+
+    st.write("")
+    with st.container(key="card2"):
+        view = st.segmented_control("Chart view", ["Total spin", "Spin in each direction"],
+                                    default="Total spin", label_visibility="collapsed")
+        w = throw_window(tid)
+        chart, how_to = st.columns([3, 1.1])
+
+        if view == "Spin in each direction":
+            axes = w.melt(id_vars=["t_ms", "when"], value_vars=["gx", "gy", "gz"], var_name="dir", value_name="dps")
+            axes["dir"] = axes.dir.str[1]   # "gx" -> "x"
+            axes["dps"] = axes.dps.abs()    # the limit is the same both ways, so we plot the size only
+            base = alt.Chart(axes).encode(x=X_AXIS)
+            rule, pick = hover(base, [alt.Tooltip("when:N", title="When"), alt.Tooltip("dir:N", title="Direction"),
+                                      alt.Tooltip("dps:Q", title="Spin (°/s)", format=",.0f")])
+            lines = base.mark_line(strokeWidth=2).encode(
+                y=alt.Y("dps:Q", title="Spin in one direction (°/s)"), color=alt.Color("dir:N", title="Direction"))
+            limit = alt.Chart(pd.DataFrame({"y": [SENSOR_LIMIT]})).mark_rule(color=WARN, strokeDash=[4, 4]).encode(y="y:Q")
+            layers = [lines, rule, limit]
+            how = ("**How to read this**\n\n1. Each line is spin around one direction (x, y or z).\n"
+                   f"2. The dashed yellow line is the {SENSOR_LIMIT:,} °/s sensor limit.\n"
+                   "3. A line touching it means that direction maxed out.")
+        else:
+            base = alt.Chart(w).encode(x=X_AXIS)
+            rule, pick = hover(base, [alt.Tooltip("when:N", title="When"),
+                                      alt.Tooltip("gyro_mag:Q", title="Spin (°/s)", format=",.0f"),
+                                      alt.Tooltip("turns:Q", title="Turns per second", format=".1f")])
+            line = base.mark_line(strokeWidth=2.2, color=BLUE).encode(y=alt.Y("gyro_mag:Q", title="Forearm spin (°/s)"))
+            dot = line.mark_point(filled=True, size=70, color=BLUE).encode(
+                opacity=alt.condition(pick, alt.value(1), alt.value(0)))
+            # label the peak right on the chart so nobody has to hunt for it
+            peak = w[w.t_ms == 0]
+            peak_dot = alt.Chart(peak).mark_point(filled=True, size=90, color="#fbfbed").encode(x="t_ms:Q", y="gyro_mag:Q")
+            peak_txt = peak_dot.mark_text(dx=12, dy=4, align="left", color="#fbfbed").encode(
+                text=alt.value(f"Fastest moment: {row.peak_dps:,.0f} °/s"))
+            layers = [line, dot, rule, peak_dot, peak_txt]
+            how = ("**How to read this**\n\n1. Left to right is time. 0 is the fastest moment.\n"
+                   "2. Higher means the forearm is spinning faster.\n"
+                   "3. Left of 0 the spin is speeding up. Right of 0 it's slowing down.\n\n"
+                   "Hover the line to read any moment.")
+
+        chart.altair_chart(alt.layer(*layers).properties(height=360, background="transparent"),
+                           use_container_width=True)
+        how_to.markdown(how)
+
+
+# ---------------------------------------------------------------
+# Page 4: Compare. Lay throws on top of each other.
+# ---------------------------------------------------------------
+def compare_page():
+    throws, _ = load_data()
+
+    eyebrow("Compare")
+    st.title("Throws, *side by side*", anchor=False)
+    lede("Every throw is lined up at its fastest moment, so you can compare the shapes directly. "
+         "Similar shapes mean the arm sped up and slowed down with similar timing.")
+    st.write("")
+
+    with st.container(key="card1"):
+        ids = st.multiselect(f"Pick up to {MAX_COMPARE} throws", throws.throw_id, default=list(throws.throw_id[:2]),
+                             max_selections=MAX_COMPARE, format_func=lambda t: f"Throw {t}")
+    if not ids:
+        st.info("Pick at least one throw above.")
+        return
+
+    with st.container(key="card2"):
+        df = pd.concat(throw_window(t) for t in ids)
+        df["throw"] = "Throw " + df.throw_id
+        names = sorted(df.throw.unique())
+        base = alt.Chart(df).encode(x=X_AXIS)
+        lines = base.mark_line(strokeWidth=2).encode(y=alt.Y("gyro_mag:Q", title="Forearm spin (°/s)"),
+                                                     color=alt.Color("throw:N", title=None))
+        # pivot turns rows into one column per throw, so the tooltip lists every throw at that moment
+        rule, _ = hover(base.transform_pivot("throw", value="gyro_mag", groupby=["t_ms", "when"]),
+                        [alt.Tooltip("when:N", title="When")] +
+                        [alt.Tooltip(f"{n}:Q", title=f"{n} (°/s)", format=",.0f") for n in names])
+        st.altair_chart(alt.layer(lines, rule).properties(height=360, background="transparent"),
+                        use_container_width=True)
+        st.caption("A few throws can't prove a pitcher is consistent. It takes many throws over many sessions.")
+
+    with st.container(key="card3"):
+        table = throws[throws.throw_id.isin(ids)]
+        st.dataframe(pd.DataFrame({
+            "Throw": "Throw " + table.throw_id,
+            "Fastest spin (°/s)": table.peak_dps.map("{:,.0f}".format),
+            "Turns per second": table.turns.map("{:.1f}".format),
+            "Rank in session": table["rank"].map(ordinal),
+            "Hit sensor limit": table.clipped.map({True: "Yes", False: "No"}),
+        }), hide_index=True, use_container_width=True)
+
+
+# ---------------------------------------------------------------
+# Page 5: About. Who made it, what it can't do, and how we used AI.
+# ---------------------------------------------------------------
+def about_page():
+    throws, _ = load_data()
+
+    eyebrow("About")
+    st.title("About *KinetiSense*", anchor=False)
+    lede("Built by Arnav Chouksey and Vatsalya Vishnoi for the Congressional App Challenge.")
+    st.write("")
+
+    cards = [
+        ("What it is", "A wearable sensor for youth pitchers that straps to the outer forearm and records how fast "
+         "the forearm spins during a throw. This app shows those throws."),
+        ("What it does not do", "It does not measure pitch speed, ball spin, injury risk or health. "
+         "We won't claim any of that unless real testing backs it up."),
+        ("The data you're looking at", f"These {len(throws)} throws are demo data made by a computer program, not a "
+         "real recording. They let you try the app while we finish the hardware."
+         if DATA_IS_SYNTHETIC else f"These {len(throws)} throws are real recordings from the sensor."),
+        ("Sensor limit", f"The sensor can read up to {SENSOR_LIMIT:,} °/s in each direction, according to its "
+         "datasheet. We haven't confirmed that on our own device yet."),
+        ("How we used AI", "An AI (Claude) wrote the code and design of this app. "
+         "Every AI use in the project is listed in AI_USAGE.md in our code."),
+    ]
+    for i, (title, body) in enumerate(cards, start=1):
+        with st.container(key=f"card{i}"):
+            st.subheader(title, anchor=False)
+            st.write(body)
+
+
+# ---------------------------------------------------------------
+# Navigation along the top, like a website
+# ---------------------------------------------------------------
+PAGES = {
+    "home": st.Page(home_page, title="Start here", icon=":material/home:", default=True),
+    "all": st.Page(all_page, title="All throws", icon=":material/bar_chart:"),
+    "one": st.Page(one_page, title="One throw", icon=":material/show_chart:"),
+    "compare": st.Page(compare_page, title="Compare", icon=":material/stacked_line_chart:"),
+    "about": st.Page(about_page, title="About", icon=":material/info:"),
+}
+page = st.navigation(list(PAGES.values()), position="top")
+
+if DATA_IS_SYNTHETIC:
+    st.html('<div class="banner">Demo mode: these throws were made by a computer so you can try the app. '
+            'Real sensor data comes next.</div>')
+
+page.run()
