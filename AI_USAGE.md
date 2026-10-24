@@ -31,6 +31,13 @@ Required for the Congressional App Challenge. Every AI contribution is listed he
 | Research | none | Claude extracted facts from the ISM330DHCX and Pico 2 W datasheets and flagged datasheet errors. Values are still unverified on the real device until tested. | n/a |
 | Planning | none | Claude drafted a prompt for another AI to write a presentation script. Any script that comes from it will be rewritten by the students and disclosed. | n/a |
 
+## Session 3 (2026-10-24)
+
+| Area | File(s) | Kind of help | Who wrote the code |
+|---|---|---|---|
+| Review | `web/app.py` | Claude ran the site in a browser, took screenshots, and reviewed the UI. Found: empty card boxes (an HTML div opened in one `st.markdown` call cannot wrap a widget), white Streamlit header left over on a dark page, three near identical keyframes, wording that claims more than the data supports ("verified" on synthetic data, "Optimal", "elite", "prove", "Peak Acceleration Point", "Time to Peak Arm Speed" for a recording timestamp). | n/a |
+| Recommendations | none | Claude recommended a design and motion plan (theme in `.streamlit/config.toml`, keyed `st.container` cards, one shared keyframe, interactive charts, reduced motion support) based on screenshots of heylemon.ai and raisedhand.ai. Claude tested the approach in a throwaway prototype that is not committed. No app code was changed. | n/a |
+
 ## Template for future sessions
 
 | Area | File(s) | Kind of help | Who wrote the code |
