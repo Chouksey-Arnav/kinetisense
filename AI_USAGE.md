@@ -19,6 +19,18 @@ Required for the Congressional App Challenge. Every AI contribution is listed he
 | Docs | `docs/data_plan.md`, `README.md` | Claude wrote the data plan (how real training data is recorded, labeled, split, and used honestly) and added its link to the README. | Claude (documentation only) |
 | ML core | none yet | No ML code written by Claude. The student writes the first data loading and plotting analysis. | Student |
 
+## Session 2 (2026-10-24)
+
+| Area | File(s) | Kind of help | Who wrote the code |
+|---|---|---|---|
+| Firmware | `firmware/main.py` | Claude wrote the Part 1 constants block (addresses, registers, settings bytes, conversion factors) from datasheet values it extracted and the student then checked. Claude explained I2C, registers and write/readback. Claude reviewed the student's Parts 2 and 3, found two bugs in Part 2 (wrong register name, and the expected ID compared against the wrong constant), and asked for raw hex numbers to be replaced with the named constants. | Student (Parts 2 and 3). Claude (constants only). |
+| Review and testing | `web/app.py` | Claude reviewed five versions of the website and ran each in a local test harness (8 demo throws, per-axis clipping check, 12 bad-file cases, run from two folders). Findings sent back to the co-builder: relative data path, missing column checks, missing plot cleanup, empty-file crash, unclear disclosure. The test harness is not committed. | Co-builder (Vatsalya). He also states that AI helped with code implementation. Exact split still to be confirmed with him. |
+| Boilerplate | `web/tools/make_demo_data.py`, `web/sample_data/demo_throws.csv`, `web/sample_data/demo_samples.csv` | Claude wrote the generator and generated the synthetic stand-in data. It is fake, contains no real recording, and the site labels it DEMO DATA. | Claude (boilerplate only) |
+| Boilerplate | `web/requirements.txt`, `web/README.md` | Claude wrote the dependency pins (the versions it tested with) and the README. | Claude (boilerplate only) |
+| Teaching | none | Claude explained concepts (imports, constants, hex, bytes, I2C, `struct.unpack`, git staging, commit, fast-forward merge). | n/a |
+| Research | none | Claude extracted facts from the ISM330DHCX and Pico 2 W datasheets and flagged datasheet errors. Values are still unverified on the real device until tested. | n/a |
+| Planning | none | Claude drafted a prompt for another AI to write a presentation script. Any script that comes from it will be rewritten by the students and disclosed. | n/a |
+
 ## Template for future sessions
 
 | Area | File(s) | Kind of help | Who wrote the code |
