@@ -420,8 +420,8 @@ def about_page():
          if DATA_IS_SYNTHETIC else f"These {len(throws)} throws are real recordings from the sensor."),
         ("Sensor limit", f"The sensor can read up to {SENSOR_LIMIT:,} °/s in each direction, according to its "
          "datasheet. We haven't confirmed that on our own device yet."),
-        ("How we used AI", "AI tools helped with parts of this project, including this app's design. "
-         "Every use is listed in AI_USAGE.md in our code."),
+        ("How we used AI", "An AI (Claude) wrote the code for this app and its design. The sensor, firmware and "
+         "throw detection are ours. Every AI use is listed in AI_USAGE.md in our code."),
     ]
     for i, (title, body) in enumerate(cards, start=1):
         with st.container(key=f"card{i}"):
