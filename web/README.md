@@ -10,6 +10,10 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+Run it from inside `web/`, or the theme in `web/.streamlit/config.toml` won't load and the app falls back to default fonts and colors.
+
+To open it on a phone, put the phone on the same Wi-Fi as the computer and open the "Network URL" that Streamlit prints.
+
 ## Ask AI and the Groq key
 
 The Ask AI tab sends the session's numbers (never names or video) to a model on Groq and shows the answer. All of its code, rules and safety checks are in `ai_coach.py`. Without a key the tab says the AI is off and the rest of the app works normally, offline included.

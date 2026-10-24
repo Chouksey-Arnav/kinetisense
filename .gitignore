@@ -12,3 +12,6 @@ secrets.toml
 data/raw/
 data/video/
 data/synthetic/
+.virtual_documents/
+anaconda_projects/
+Untitled*.ipynb

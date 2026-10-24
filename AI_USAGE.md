@@ -44,13 +44,23 @@ Required for the Congressional App Challenge. Every AI contribution is listed he
 
 | Area | File(s) | Kind of help | Who wrote the code |
 |---|---|---|---|
+| UI rewrite | `web/app.py` | At the student's request, Claude rewrote the whole web app so it looks and works like a phone app: one font, one color theme, a tab bar that sits at the bottom on a phone, a tappable throw list, two big numbers per page, and chart readouts that work when you tap. Claude also rewrote all the on-screen text in plain words. The data loading and checking code (`load_data`, `throw_window`) is kept from the earlier version with small changes. Tested in a browser at iPhone and computer sizes and with Streamlit's test runner (every tab, every throw, both chart views, three broken-file cases). | Claude (whole file) |
+| Theme | `web/.streamlit/config.toml` | Claude wrote the theme file. It was missing from `web/`, which is why the app showed mixed fonts and colors. | Claude |
+| Research | none | Claude rendered heylemon.ai and raisedhand.ai in a browser and read their real colors and fonts, then ran the chart colors through a colorblind palette validator. | n/a |
+| Docs | `docs/design_system.md` | Claude rewrote the design spec to match the new app. | Claude (documentation only) |
+
+## Session 5 (2026-10-24)
+
+| Area | File(s) | Kind of help | Who wrote the code |
+|---|---|---|---|
 | Logo | `web/assets/logo.svg`, `web/assets/mark.svg` | The student made the logo idea with Google Gemini's image generator. Its output was misspelled ("KINIETIQ" with a stray mark). Claude redrew it as a vector file from plain shapes, spelled KINETIQ, and made the Q tab icon. | Gemini (concept image), Claude (SVG files) |
-| Rename | `web/app.py`, `web/reference/app.py`, `README.md`, `CLAUDE.md`, `docs/design_system.md`, `docs/data_plan.md`, `web/tools/make_demo_data.py` | The student chose to rename the app from KinetiSense to Kinetiq. Claude replaced the name and put the logo in the app header and tab icon. | Claude |
+| Rename | `web/app.py`, `README.md`, `CLAUDE.md`, `docs/design_system.md`, `docs/data_plan.md`, `web/tools/make_demo_data.py` | The student chose to rename the app from KinetiSense to Kinetiq. Claude replaced the name and put the logo in the app header and tab icon. | Claude |
 | AI feature | `web/ai_coach.py` (all functions: `build_context`, `rise_time_ms`, `RateLimiter`, `check_question`, `get_api_key`, `get_model`, `build_messages`, `ask`, `leaks_prompt`, and `SYSTEM_PROMPT`) | At the student's request, Claude designed and wrote the Ask AI feature: the fact sheet the model reads, the model's rules, input limits, per visitor and app wide rate limits, Groq error handling, and the prompt leak check. | Claude |
 | AI feature | `web/app.py` (`ask_about`, `groq_client`, `app_limiter`, `send`, `answer`, `ask_page`, the Ask AI buttons on One throw and Compare, phone tab bar CSS, the About page AI section) | Claude wired the Ask AI tab into the app. | Claude |
 | Config | `web/.streamlit/secrets.toml.example`, `.gitignore`, `web/requirements.txt` | Claude set up how the Groq key is stored (gitignored `secrets.toml`, environment variable fallback) and pinned `groq==1.7.0`. | Claude (boilerplate only) |
 | Tests | `web/tests/test_ai_coach.py`, `web/tools/redteam_ai.py` | Claude wrote 24 unit tests (no network) and a live red team script. The unit tests caught one bug in Claude's own leak check (the scripted refusal counted as a leak). Claude also ran the app in a browser against a fake local Groq server, at desktop and phone widths. Claude never ran it against the real Groq model, because it had no key. | Claude (tests only) |
 | Docs | `web/README.md`, `README.md`, `docs/verification_log.md` | Claude documented the key setup, the risks, and the rename. | Claude (documentation only) |
+| Security | `web/.streamlit/secrets.toml`, `.gitignore`, `web/assests/` | A real Groq key was committed to `main` through the GitHub website, and the logo was uploaded to a misspelled `assests` folder. Claude found both, removed the key file and the stray folder, and restored the `.gitignore` rule. The leaked key has to be revoked in the Groq console. | Claude (fix only) |
 | Runtime AI | Ask AI tab | The app itself now calls an AI model (openai/gpt-oss-120b, run by Groq) when a user asks a question. This must be named in the submission as part of what the app does, separately from the AI that helped build it. | n/a |
 
 ## Template for future sessions
