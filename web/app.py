@@ -322,6 +322,13 @@ def ask_page(throws):
         st.info("The AI is turned off because there's no Groq API key on this computer. "
                 "web/README.md says how to add one. Everything else in the app works without it.")
         return
+    try:
+        import groq  # noqa: F401  (just checking it is installed)
+    except ImportError:
+        st.error("The AI package is not installed in the Python that runs this app. In Terminal, run "
+                 "`python3 -m pip install -r requirements.txt` from the web folder, then restart with "
+                 "`python3 -m streamlit run app.py`. Everything else in the app works without it.")
+        return
 
     chat = st.session_state.setdefault("chat", [])
     for m in chat:

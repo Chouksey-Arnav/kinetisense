@@ -62,6 +62,7 @@ Required for the Congressional App Challenge. Every AI contribution is listed he
 | Docs | `web/README.md`, `README.md`, `docs/verification_log.md` | Claude documented the key setup, the risks, and the rename. | Claude (documentation only) |
 | Security | `web/.streamlit/secrets.toml`, `.gitignore`, `web/assests/` | A real Groq key was committed to `main` through the GitHub website, and the logo was uploaded to a misspelled `assests` folder. Claude found both, removed the key file and the stray folder, and restored the `.gitignore` rule. The leaked key has to be revoked in the Groq console. | Claude (fix only) |
 | Runtime AI | Ask AI tab | The app itself now calls an AI model (openai/gpt-oss-120b, run by Groq) when a user asks a question. This must be named in the submission as part of what the app does, separately from the AI that helped build it. | n/a |
+| Bug fix | `web/app.py` (`ask_page`) | Claude diagnosed `ModuleNotFoundError: No module named 'groq'` (package pinned in `web/requirements.txt` but not installed in the Python running Streamlit) and added a check in `ask_page` that shows install instructions instead of crashing. | Claude (fix only) |
 
 ## Template for future sessions
 
