@@ -1,0 +1,25 @@
+# The whole look of the app lives here. app.py only adds a few things a config file can't do.
+# Streamlit only finds this file if you run the app from inside web/.
+
+[theme]
+base = "light"
+primaryColor = "#3d5bd9"              # blue, a darker version of raisedhand's so it's readable on cream
+backgroundColor = "#fbfbed"           # cream page, from heylemon
+secondaryBackgroundColor = "#f1f0e2"  # inputs and dropdowns
+textColor = "#1a1a17"                 # almost black ink, from heylemon
+borderColor = "#e6e4d3"
+linkColor = "#3d5bd9"
+
+# one font for everything. Headings are just bolder, not a different font
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+headingFontWeights = [600, 600, 600, 600, 600, 600]
+headingFontSizes = ["1.75rem", "1.2rem", "1.05rem"]
+
+baseRadius = "14px"
+buttonRadius = "14px"
+# blue, green, purple. Passed a colorblind check on white, so Compare stops at 3.
+# Orange is saved for the sensor limit so it never means two things.
+chartCategoricalColors = ["#3d5bd9", "#1d8a5e", "#a34fbf"]
+
+[client]
+toolbarMode = "minimal"
