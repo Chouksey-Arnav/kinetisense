@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -10 752 142" role="img" aria-label="Kinetiq">
+  <title>Kinetiq</title>
+  <!-- Wordmark built from plain shapes so it stays sharp at any size. Cap height is 110, strokes are 21 wide. -->
+  <g fill="#1a1a17">
+    <!-- K -->
+    <rect x="0" y="0" width="21" height="110"/>
+    <polygon points="21,56 77,0 105,0 21,84"/>
+    <polygon points="41,62 57,48 102.5,110 76.3,110"/>
+    <!-- I -->
+    <rect x="135" y="0" width="21" height="110"/>
+    <!-- N -->
+    <rect x="186" y="0" width="21" height="110"/>
+    <rect x="253" y="0" width="21" height="110"/>
+    <polygon points="186,0 209,0 274,110 251,110"/>
+    <!-- E -->
+    <rect x="304" y="0" width="21" height="110"/>
+    <rect x="304" y="0" width="88" height="19"/>
+    <rect x="304" y="45.5" width="80" height="19"/>
+    <rect x="304" y="91" width="88" height="19"/>
+    <!-- T -->
+    <rect x="422" y="0" width="98" height="19"/>
+    <rect x="460.5" y="0" width="21" height="110"/>
+    <!-- I -->
+    <rect x="550" y="0" width="21" height="110"/>
+  </g>
+  <!-- Q: a ring plus a swooping tail -->
+  <g fill="none" stroke="#1a1a17">
+    <circle cx="662" cy="55" r="50.5" stroke-width="21"/>
+    <path d="M652 104 C668 120 690 132 712 125 S728 113 733 107" stroke-width="13"/>
+  </g>
+</svg>

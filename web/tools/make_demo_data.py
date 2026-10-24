@@ -1,4 +1,4 @@
-"""Builds contract-format demo files (throws + samples) matching the KinetiSense data contract.
+"""Builds contract-format demo files (throws + samples) matching the Kinetiq data contract.
 Throws 1 and 5 have one axis pinned at 4000 (truly clipped). Throw 4 peaks at 4901.2 with NO axis clipped.
 """
 import sys

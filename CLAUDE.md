@@ -1,4 +1,4 @@
-# KinetiSense: working rules for Claude
+# Kinetiq (formerly KinetiSense): working rules for Claude
 
 Full project context lives in `docs/verification_log.md` (verified facts, corrections, open questions). The owner is a high school freshman entering the Congressional App Challenge (CAC) and eCYBERMISSION.
 

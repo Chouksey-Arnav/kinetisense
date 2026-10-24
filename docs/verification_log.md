@@ -13,6 +13,9 @@ Status of every claim in the original (AI-generated) project plan. Update as ite
 
 ## Unverified (do not use yet)
 
+- Name clash: a quick search on 2026-10-24 found an App Store app called "KinetiQ: AI Sports Coach" (video based technique feedback), a "KiNETIQ: AI Workout & Training" app, an Irish movement analysis company "KinetikIQ", and a US trademark application for KINETIQ (serial 98748123, sporting goods). Not checked with a lawyer or the USPTO directly. A judge who searches the name will find these.
+- Ask AI behavior on the real model. Only tested against a fake server. Run `web/tools/redteam_ai.py` with the real key and read every answer before the demo.
+
 - CAC district registration deadline of Oct 15, 2026 (not in the rules PDF). Check the participating districts page and screenshot it.
 - Motus specs (+/-4000 dps, +/-24 g, 1000 Hz) and the description of Motus as modeled elbow torque from a proprietary mocap-trained model.
 - ICM-20649 specs: gyro +/-500/1000/2000/4000 dps, accel +/-4/8/16/30 g, max ODR near 1.1 kHz, FIFO size, DLPF options. Read the datasheet.
@@ -53,6 +56,9 @@ Allowed once supported: "measures forearm angular velocity", "differs from model
 - Cricket radar gun: model, type, minimum reading.
 
 ## Decisions
+
+- 2026-10-24: App renamed from KinetiSense to Kinetiq (student's choice, after Claude pointed out the Gemini logo was misspelled). The repo name stays `kinetisense`. The device value `kinetisense` in `data/README.md` session metadata was left as is so old metadata rows still match.
+- 2026-10-24: Ask AI tab added, using Groq. Default model `openai/gpt-oss-120b`, chosen from Groq's production model list on 2026-10-24. The model reads computed numbers, not screenshots.
 
 - Sensor: ICM-20649. Enclosure: 95A TPU, OpenSCAD v3 as a starting point (needs fixes above).
 - ML and evaluation code in Python, written by the student.

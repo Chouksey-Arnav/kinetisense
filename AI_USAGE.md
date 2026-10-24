@@ -40,6 +40,19 @@ Required for the Congressional App Challenge. Every AI contribution is listed he
 | Reference code | `web/reference/app.py`, `web/reference/.streamlit/config.toml` | At the student's request, Claude wrote a complete reference version of the web viewer that shows the design system working (theme config, keyed cards, one entrance animation, Altair charts with hover, honest labels). It is a separate example to read, not the submission app. If any of it is copied into `web/app.py`, that must be logged here as Claude written code. | Claude (reference only) |
 | Docs | `docs/design_system.md` and a shared Claude Docs copy | Claude wrote the design spec (fonts, colors, spacing, motion, file structure, Streamlit pitfalls, honest wording) for the student to send to the co-builder. Chart colors were checked with a colorblind palette validator. | Claude (documentation only) |
 
+## Session 4 (2026-10-24)
+
+| Area | File(s) | Kind of help | Who wrote the code |
+|---|---|---|---|
+| Logo | `web/assets/logo.svg`, `web/assets/mark.svg` | The student made the logo idea with Google Gemini's image generator. Its output was misspelled ("KINIETIQ" with a stray mark). Claude redrew it as a vector file from plain shapes, spelled KINETIQ, and made the Q tab icon. | Gemini (concept image), Claude (SVG files) |
+| Rename | `web/app.py`, `web/reference/app.py`, `README.md`, `CLAUDE.md`, `docs/design_system.md`, `docs/data_plan.md`, `web/tools/make_demo_data.py` | The student chose to rename the app from KinetiSense to Kinetiq. Claude replaced the name and put the logo in the app header and tab icon. | Claude |
+| AI feature | `web/ai_coach.py` (all functions: `build_context`, `rise_time_ms`, `RateLimiter`, `check_question`, `get_api_key`, `get_model`, `build_messages`, `ask`, `leaks_prompt`, and `SYSTEM_PROMPT`) | At the student's request, Claude designed and wrote the Ask AI feature: the fact sheet the model reads, the model's rules, input limits, per visitor and app wide rate limits, Groq error handling, and the prompt leak check. | Claude |
+| AI feature | `web/app.py` (`ask_about`, `groq_client`, `app_limiter`, `send`, `answer`, `ask_page`, the Ask AI buttons on One throw and Compare, phone tab bar CSS, the About page AI section) | Claude wired the Ask AI tab into the app. | Claude |
+| Config | `web/.streamlit/secrets.toml.example`, `.gitignore`, `web/requirements.txt` | Claude set up how the Groq key is stored (gitignored `secrets.toml`, environment variable fallback) and pinned `groq==1.7.0`. | Claude (boilerplate only) |
+| Tests | `web/tests/test_ai_coach.py`, `web/tools/redteam_ai.py` | Claude wrote 24 unit tests (no network) and a live red team script. The unit tests caught one bug in Claude's own leak check (the scripted refusal counted as a leak). Claude also ran the app in a browser against a fake local Groq server, at desktop and phone widths. Claude never ran it against the real Groq model, because it had no key. | Claude (tests only) |
+| Docs | `web/README.md`, `README.md`, `docs/verification_log.md` | Claude documented the key setup, the risks, and the rename. | Claude (documentation only) |
+| Runtime AI | Ask AI tab | The app itself now calls an AI model (openai/gpt-oss-120b, run by Groq) when a user asks a question. This must be named in the submission as part of what the app does, separately from the AI that helped build it. | n/a |
+
 ## Template for future sessions
 
 | Area | File(s) | Kind of help | Who wrote the code |

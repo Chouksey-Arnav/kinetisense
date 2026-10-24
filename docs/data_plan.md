@@ -1,4 +1,4 @@
-# Data plan: how KinetiSense gets its training data
+# Data plan: how Kinetiq gets its training data
 
 Read this before you record, label, or train anything.
 
@@ -13,8 +13,8 @@ There are three kinds of data in this project. Each has a different job.
 | Kind | What it is | Allowed use | Never use it for |
 |---|---|---|---|
 | **Synthetic** | Fake data made by `ml/tools/make_synthetic_session.py` | Practice: loading, plotting, windows, metrics, building the app | Results, validation, "the model trained on this", anything in the submission as evidence |
-| **Phone** | Real recordings from a phone strapped to the forearm | Backup if the device is late. Real signals, lower quality | Claims about the KinetiSense device |
-| **Device** | Real recordings from the KinetiSense device | Calibrating the detector, testing it, the replay app, the submission | Nothing is off limits, but it must be labeled honestly |
+| **Phone** | Real recordings from a phone strapped to the forearm | Backup if the device is late. Real signals, lower quality | Claims about the Kinetiq device |
+| **Device** | Real recordings from the Kinetiq device | Calibrating the detector, testing it, the replay app, the submission | Nothing is off limits, but it must be labeled honestly |
 
 Why this matters: synthetic data contains exactly what we put into it, so any detector scores perfectly on it. That proves nothing about real throws. If a judge asks for the data, every claim has to trace back to a real recording.
 
@@ -136,6 +136,6 @@ Good:
 
 Not allowed:
 - "The model was trained on [synthetic data]."
-- "KinetiSense measures pitch speed" (unless the validation really supports it).
+- "Kinetiq measures pitch speed" (unless the validation really supports it).
 - "Prevents injury." Never.
 - Any number you cannot trace back to a real recording.

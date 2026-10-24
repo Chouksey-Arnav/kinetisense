@@ -24,7 +24,7 @@ TABS = ["Throws", "One throw", "Compare", "About"]
 NEEDED = {"demo_throws.csv": {"throw_id", "peak_time_s", "peak_dps", "clipped"},
           "demo_samples.csv": {"throw_id", "time_s", "gx", "gy", "gz", "gyro_mag"}}
 
-st.set_page_config(page_title="KinetiSense", page_icon="⚾", layout="centered")
+st.set_page_config(page_title="Kinetiq", page_icon="⚾", layout="centered")
 
 # ---------------------------------------------------------------
 # Styles. Colors and the font are in config.toml. This is only what a
@@ -278,7 +278,7 @@ We used Claude, an AI, to write the code and design of this app. Every time we u
 # ---------------------------------------------------------------
 throws, _ = load_data()
 demo = '<span class="pill">Demo data</span>' if DATA_IS_SYNTHETIC else ""
-st.html(f'<div class="top">KinetiSense {demo}</div>')
+st.html(f'<div class="top">Kinetiq {demo}</div>')
 
 st.session_state.setdefault("tab", TABS[0])
 with st.container(key="tabs"):

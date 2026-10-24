@@ -1,4 +1,6 @@
-# KinetiSense design system
+# Kinetiq design system
+
+Logo: `web/assets/logo.svg` (wordmark) and `web/assets/mark.svg` (the Q, used as the browser tab icon). Both use the ink color `#1a1a17`. Use the files, never retype the name in a font.
 
 The look and structure for the web viewer in `web/`. Written by Claude from screenshots of raisedhand.ai and heylemon.ai, and logged in `AI_USAGE.md`. A working example lives in `web/reference/`. To run it:
 

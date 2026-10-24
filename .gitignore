@@ -6,6 +6,8 @@ __pycache__/
 node_modules/
 .env
 .env.*
+# API keys. Streamlit reads these, git must never see them
+secrets.toml
 # raw sensor recordings and anything with a person's name or video
 data/raw/
 data/video/
