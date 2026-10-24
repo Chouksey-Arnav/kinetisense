@@ -66,7 +66,7 @@ You record a 20 second file called `s01_f07.bin`. Your log sheet says: "file 07:
 data/raw/s01/            recordings from session s01 (NOT committed to git)
 data/raw/s01/labels.csv  one row per labeled event (not committed)
 data/sessions.csv        one row per session (see data/README.md)
-web/sample_data/         a few anonymous throws, copied here so the public app can replay them
+web/recordings/         anonymous throws the web app replays (git ignored, never committed)
 ```
 
 Naming: `s01_f07` means session 01, file 07. Thrower IDs are always `T01`, `T02`. No names, faces, or video of a minor are ever committed.

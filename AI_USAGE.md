@@ -63,6 +63,16 @@ Required for the Congressional App Challenge. Every AI contribution is listed he
 | Security | `web/.streamlit/secrets.toml`, `.gitignore`, `web/assests/` | A real Groq key was committed to `main` through the GitHub website, and the logo was uploaded to a misspelled `assests` folder. Claude found both, removed the key file and the stray folder, and restored the `.gitignore` rule. The leaked key has to be revoked in the Groq console. | Claude (fix only) |
 | Runtime AI | Ask AI tab | The app itself now calls an AI model (openai/gpt-oss-120b, run by Groq) when a user asks a question. This must be named in the submission as part of what the app does, separately from the AI that helped build it. | n/a |
 
+## Session 6 (2026-10-24)
+
+| Area | File(s) | Kind of help | Who wrote the code |
+|---|---|---|---|
+| Data removal | `web/sample_data/` (deleted), `web/tools/make_demo_data.py` (deleted), `web/app.py` (`parse`, `read_folder`, `load_data`, `empty_state`, About page text), `.gitignore` | At the student's request, Claude removed the made-up demo data and the Demo data banner from the app. With no files the app shows "No recordings yet" and lets you upload `throws.csv` and `samples.csv`, or read them from a git-ignored `web/recordings/` folder. | Claude |
+| Ask AI button | `web/app.py` (`screen_label`, `open_ai`, `ask_about`, `suggestions`, `ai_dialog`, the floating button CSS, the Ask AI buttons) | Claude replaced the Ask AI tab with a button that floats over every page and opens the chat as a pop-up. Suggested questions change with the page you are on. | Claude |
+| AI feature | `web/ai_coach.py` (`build_context`, `SYSTEM_PROMPT`) | Claude made the fact sheet and the rules work when no recordings are loaded, so the AI says so instead of inventing throws. | Claude |
+| Tests | `web/tests/fixture_session.py`, `web/tests/test_ai_coach.py`, `web/tools/redteam_ai.py` | The tests used the deleted demo files. Claude moved a small made-up session into the test code only and added a test for the no-data case. 25 tests pass. Claude also drove the app in a browser at phone and desktop sizes against a fake local Groq server. It never ran against the real model. | Claude (tests only) |
+| Security | `web/.streamlit/secrets.toml` | A real Groq key was committed to the repo again. Claude stopped git from tracking the file. The key is still in git history, so it has to be revoked in the Groq console. | Claude (fix only) |
+
 ## Template for future sessions
 
 | Area | File(s) | Kind of help | Who wrote the code |

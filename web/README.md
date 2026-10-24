@@ -1,6 +1,6 @@
 # web/
 
-Streamlit web viewer for Kinetiq that replays finished throws: metrics table, per-throw graph, multi-throw comparison, an Ask AI tab, and an About and Limits page. It only displays data. Peaks, magnitudes and clipped flags are computed in `ml/` and arrive as finished columns in the data files.
+Streamlit web viewer for Kinetiq that replays finished throws: metrics table, per-throw graph, multi-throw comparison, an Ask AI button that opens a chat over any page, and an About and Limits page. It only displays data. Peaks, magnitudes and clipped flags are computed in `ml/` and arrive as finished columns in the data files.
 
 ## Run locally
 
@@ -16,7 +16,7 @@ To open it on a phone, put the phone on the same Wi-Fi as the computer and open 
 
 ## Ask AI and the Groq key
 
-The Ask AI tab sends the session's numbers (never names or video) to a model on Groq and shows the answer. All of its code, rules and safety checks are in `ai_coach.py`. Without a key the tab says the AI is off and the rest of the app works normally, offline included.
+The floating Ask AI button (bottom right of every page) opens a chat. The buttons on the Throws, One throw and Compare pages open it with a question already sent. It sends the session's numbers (never names or video) to a model on Groq and shows the answer. All of its code, rules and safety checks are in `ai_coach.py`. Without a key the chat says the AI is off and the rest of the app works normally, offline included.
 
 ### Add the key on your own computer (do this)
 
@@ -53,13 +53,17 @@ Change the model by adding `GROQ_MODEL = "..."` to `secrets.toml`, then run the 
 
 ## Data
 
-`sample_data/demo_throws.csv` and `sample_data/demo_samples.csv` are synthetic stand-in data made by `tools/make_demo_data.py`. They are not a real recording. The app shows a DEMO DATA banner while `DATA_IS_SYNTHETIC = True` in `app.py`.
+The app ships with no data. Until you load a recording it shows "No recordings yet". Two ways to load one:
 
-## Swap day (when real data exists)
+1. In the app, upload `throws.csv` and `samples.csv`. They live only in that browser session.
+2. Put both files in `web/recordings/` (git ignores this folder, so recordings never get uploaded) and restart the app. The app caches the files and keeps showing old numbers otherwise.
 
-1. Replace the two CSV files, keeping the same column names.
-2. Set `DATA_IS_SYNTHETIC = False` only if the data is truly real.
-3. Restart the app. The app caches the files and will keep showing old numbers otherwise.
+Columns:
+
+- `throws.csv`: `throw_id`, `peak_time_s`, `peak_dps`, `clipped`
+- `samples.csv`: `throw_id`, `time_s`, `gx`, `gy`, `gz`, `gyro_mag`
+
+The app cannot tell a real recording from made-up numbers. Only load recordings you know are real. `tests/fixture_session.py` builds a small made-up session in memory for the tests only.
 
 ## Limits
 

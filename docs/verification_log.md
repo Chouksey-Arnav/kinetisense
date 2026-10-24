@@ -64,3 +64,4 @@ Allowed once supported: "measures forearm angular velocity", "differs from model
 - ML and evaluation code in Python, written by the student.
 - Web app must have replay mode that works with no hardware and no network.
 - Pending: transport (Wi-Fi hotspot to a local server versus cloud versus Web Bluetooth), web stack, firmware language after measurements.
+- 2026-10-24: Demo data removed from the web app. It now shows "No recordings yet" until real files are loaded. Open: the CSV column contract (`throws.csv`, `samples.csv`) is still the old demo schema. Check that the `ml/` pipeline will output exactly these columns before the real recordings exist. The committed Groq key in `web/.streamlit/secrets.toml` is in git history and must be revoked.

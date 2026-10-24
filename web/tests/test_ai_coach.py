@@ -15,17 +15,14 @@ import pytest
 
 WEB = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(WEB))
+sys.path.insert(0, str(WEB / "tests"))
 import ai_coach  # noqa: E402
+from fixture_session import make_session  # noqa: E402
 
 
 @pytest.fixture
 def session():
-    throws = pd.read_csv(WEB / "sample_data" / "demo_throws.csv")
-    samples = pd.read_csv(WEB / "sample_data" / "demo_samples.csv")
-    throws["throw_id"] = throws.throw_id.astype(str)
-    samples["throw_id"] = samples.throw_id.astype(str)
-    throws["rank"] = throws.peak_dps.rank(ascending=False, method="min").astype(int)
-    return throws, samples
+    return make_session()
 
 
 # --- the API key ---------------------------------------------------------
@@ -110,6 +107,12 @@ def test_messages_keep_rules_first_and_trim_history():
     assert msgs[-1] == {"role": "user", "content": "new"}
 
 
+def test_context_with_no_recordings():
+    facts = json.loads(ai_coach.build_context(None, None, 4000, False, "Throws page, whole session"))
+    assert facts["number_of_throws"] == 0 and facts["throws"] == []
+    assert "fastest_throw" not in facts
+
+
 # --- the leak check --------------------------------------------------------
 def test_canary_is_a_leak():
     assert ai_coach.leaks_prompt(f"My tag is {ai_coach.CANARY.upper()}")
@@ -121,7 +124,7 @@ def test_copied_rules_are_a_leak():
 
 
 @pytest.mark.parametrize("answer", [
-    "Throw 4 was the fastest at 4,901 °/s. This is demo data made by a computer, not a real person.",
+    "Throw 3 was the fastest at 4,901 °/s. This data was made by a computer, not a real person.",
     "Throw 1 hit the sensor limit, so its real peak was at least 4,338 °/s and probably higher.",
     "I can't share how I'm set up, but I can explain anything about your throws.",
     "The app can't measure pitch speed yet because it hasn't been tested against a radar gun.",

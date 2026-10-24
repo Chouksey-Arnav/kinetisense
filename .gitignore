@@ -15,3 +15,6 @@ data/synthetic/
 .virtual_documents/
 anaconda_projects/
 Untitled*.ipynb
+
+# recordings you load into the web app
+web/recordings/

@@ -63,7 +63,7 @@ Plain words, like you'd say them to a teammate. No slogans. No dashes as punctua
 | Do not write | Write instead |
 |---|---|
 | "Every throw, explained." | "How fast the forearm spun on each throw." |
-| "Verified" (on demo data) | "Demo data" |
+| "Verified" (before real data exists) | "No recordings yet" |
 | "Optimal", "elite" | "Under the limit", "Hit the limit" |
 | "Proves consistency" | "Those throws sped up and slowed down at about the same time" |
 | "Measures pitch speed" | "Measures how fast the forearm spins" |
