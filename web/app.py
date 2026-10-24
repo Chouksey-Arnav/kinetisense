@@ -1,11 +1,4 @@
-# KinetiSense web app
-#
-# Heads up: Claude (an AI) wrote this file when we asked it to redesign the app.
-# Every AI part of this project is logged in AI_USAGE.md. Don't delete this note.
-#
-# What this app does: it shows throws recorded by the KinetiSense forearm sensor.
-# It only DISPLAYS data. The math that finds each throw and its peak lives in ml/.
-#
+
 # How to run it:
 #   cd web
 #   streamlit run app.py
